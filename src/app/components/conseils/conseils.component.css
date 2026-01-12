@@ -1,0 +1,61 @@
+/* Utility classes */
+.text-4xl {
+    font-size: 2.25rem;
+    font-weight: 700;
+}
+
+.text-lg {
+    font-size: 1.125rem;
+}
+
+.text-purple-900 {
+    color: #4c1d95;
+    /* var(--purple-900) not defined in root, using approx */
+}
+
+.text-purple-600 {
+    color: #7c3aed;
+    /* var(--purple-600) not defined in root, using approx */
+}
+
+.opacity-70 {
+    opacity: 0.7;
+}
+
+/* Simple Animation Classes */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translate3d(0, 20px, 0);
+    }
+
+    to {
+        opacity: 1;
+        transform: translate3d(0, 0, 0);
+    }
+}
+
+.fade-in-up {
+    animation: fadeInUp 0.5s ease-out forwards;
+    opacity: 0;
+    /* logic handles delay */
+}
+
+.fade-in {
+    animation: fadeIn 0.5s ease-out;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+/* Fix for animation visibility */
+.fade-in-up {
+    animation-fill-mode: forwards;
+}

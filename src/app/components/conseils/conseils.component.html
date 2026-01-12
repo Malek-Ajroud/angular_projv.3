@@ -1,0 +1,36 @@
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="text-center mb-5 fade-in">
+        <h1 class="page-title">Conseils & Astuces</h1>
+        <p class="text-purple-600 opacity-70 text-lg">Découvrez nos recommandations pour vous faciliter la vie</p>
+    </div>
+    <br>
+    <!-- Category Filters -->
+    <div class="tips-filter-container fade-in-up">
+        <button *ngFor="let cat of categories" class="filter-btn" [ngClass]="{'active': selectedCategory === cat.id}"
+            (click)="filterByCategory(cat.id)">
+            <span class="mr-2">{{cat.icon}}</span> {{cat.name}}
+        </button>
+    </div>
+
+    <!-- Tips Grid -->
+    <div class="grid-2x2">
+        <div *ngFor="let tip of filteredTips; let i = index" [style.animation-delay]="(i * 0.1) + 's'"
+            class="fade-in-up">
+            <div class="tip-card-container">
+                <div class="tip-icon-container" [ngClass]="getGradientClass(tip.color)">
+                    {{tip.icon}}
+                </div>
+                <h3 class="h5 font-weight-bold text-purple-900 mb-2">{{tip.title}}</h3>
+                <p class="text-purple-600 opacity-70 mb-0" style="line-height: 1.6;">
+                    {{tip.description}}
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Empty State -->
+    <div class="text-center py-5" *ngIf="filteredTips.length === 0">
+        <p class="text-muted">Aucun conseil disponible dans cette catégorie</p>
+    </div>
+</div>

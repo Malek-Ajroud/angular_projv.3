@@ -1,0 +1,22 @@
+<div class="app-container">
+  <!-- Mobile Toggle -->
+  <button class="mobile-toggle" (click)="toggleMobileMenu()">
+    <i class="fa fa-bars"></i>
+  </button>
+
+  <!-- Sidebar Navigation -->
+  <!-- We apply the 'active' class to the container based on state -->
+  <div class="sidebar" [class.active]="mobileMenuOpen">
+    <app-sidebar></app-sidebar>
+  </div>
+
+  <!-- Overlay for mobile -->
+  <div class="sidebar-overlay" *ngIf="mobileMenuOpen" (click)="toggleMobileMenu()"></div>
+
+  <!-- Main Content Area -->
+  <main class="main-content">
+    <div class="view-animate">
+      <router-outlet></router-outlet>
+    </div>
+  </main>
+</div>

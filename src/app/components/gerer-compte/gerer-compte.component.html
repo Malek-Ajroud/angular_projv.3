@@ -1,0 +1,71 @@
+<div class="page-header">
+    <h1 class="page-title">Gérer mon compte</h1>
+</div>
+
+<div class="card" style="max-width: 700px; cursor: default;">
+    <div *ngIf="loading" class="loading-spinner">Chargement...</div>
+
+    <form #accountForm="ngForm" (ngSubmit)="updateAccount(accountForm)" *ngIf="!loading" novalidate>
+
+        <!-- Nom Complet -->
+        <div class="form-group">
+            <label for="fullName">Nom complet</label>
+            <input type="text" id="fullName" name="fullName" class="form-control" [(ngModel)]="user.fullName" required>
+        </div>
+
+        <!-- Email -->
+        <div class="form-group">
+            <label for="email">Email</label>
+            <input type="email" id="email" name="email" class="form-control" [(ngModel)]="user.email"
+                pattern="^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$" required #email="ngModel">
+            <div class="error-msg" *ngIf="email.invalid && email.touched">
+                Email invalide.
+            </div>
+        </div>
+
+        <!-- Téléphone -->
+        <div class="form-group">
+            <label for="phone">Téléphone</label>
+            <input type="text" id="phone" name="phone" class="form-control" [(ngModel)]="user.phone"
+                placeholder="XX XX XX XX XX" pattern="^(\d{2} ){4}\d{2}$|^0\d{9}$" #phone="ngModel">
+            <div class="error-msg" *ngIf="phone.invalid && phone.touched">
+                Format invalide (XX XX XX XX XX ou 0XXXXXXXXX).
+            </div>
+        </div>
+
+        <!-- Notifications -->
+        <div class="form-group" *ngIf="user.notifications">
+            <label style="margin-bottom: 1rem;">Préférences de notification</label>
+            <div style="display: flex; gap: 2rem;">
+                <label style="display: flex; align-items: center; gap: 10px; font-weight: normal; cursor: pointer;">
+                    <input type="checkbox" name="notifEmail" [(ngModel)]="user.notifications.email"> Email
+                </label>
+                <label style="display: flex; align-items: center; gap: 10px; font-weight: normal; cursor: pointer;">
+                    <input type="checkbox" name="notifSMS" [(ngModel)]="user.notifications.sms"> SMS
+                </label>
+            </div>
+        </div>
+
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1rem;">
+            <!-- Submit -->
+            <button type="submit" class="btn btn-primary" [disabled]="accountForm.invalid || saving">
+                <span *ngIf="!saving">Enregistrer</span>
+                <span *ngIf="saving"><i class="fa fa-spinner fa-spin"></i> Enregistrement...</span>
+            </button>
+
+            <!-- Delete Button -->
+            <button type="button" class="btn" style="background: #ffebee; color: #c62828;" (click)="deleteAccount()"
+                [disabled]="deleting">
+                <i class="fa fa-trash"></i> Supprimer le compte
+                <span *ngIf="deleting">...</span>
+            </button>
+        </div>
+
+        <!-- Messages -->
+        <div *ngIf="message.text"
+            [ngClass]="{'success-msg': message.type === 'success', 'error-msg': message.type === 'error'}"
+            style="margin-top: 15px; font-weight: bold;">
+            {{ message.text }}
+        </div>
+    </form>
+</div>
