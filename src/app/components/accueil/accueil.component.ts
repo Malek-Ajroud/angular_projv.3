@@ -1,3 +1,7 @@
+/**
+ * PURPOSE: The main dashboard showing a summary of children and upcoming events.
+ * CONTENT: Visual overview of the parent's space with links to key features.
+ */
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';

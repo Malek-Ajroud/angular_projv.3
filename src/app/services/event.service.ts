@@ -1,3 +1,7 @@
+/**
+ * PURPOSE: Manages family events and calendar data.
+ * CONTENT: Functions to fetch, create, and manage events scheduled by parents.
+ */
 import { Injectable } from '@angular/core';
 import { Observable, of } from 'rxjs';
 import { delay } from 'rxjs/operators';

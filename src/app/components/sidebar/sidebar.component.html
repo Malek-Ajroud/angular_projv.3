@@ -3,7 +3,19 @@
     <span>Mon Espace Parent</span>
 </div>
 
+<div class="user-profile" *ngIf="currentUser$ | async as user">
+    <div class="user-avatar">
+        {{ user.name.charAt(0).toUpperCase() }}
+    </div>
+    <div class="user-info">
+        <span class="user-name">{{ user.name }}</span>
+        <span class="user-email">{{ user.email }}</span>
+    </div>
+</div>
+
 <ul class="nav-links">
+    <!-- Temporarily hidden menu items -->
+    <!--
     <li class="nav-item">
         <a routerLink="/ajouter-enfant" routerLinkActive="active" class="btn-soft-pink">
             <i class="fa fa-plus-circle"></i> Ajouter un enfant
@@ -36,10 +48,20 @@
             <i class="fa fa-lightbulb"></i> Conseils & Astuces
         </a>
     </li>
+    -->
+
+    <!-- Only showing Assistant AI for now -->
     <li class="nav-item">
         <a routerLink="/chat" routerLinkActive="active">
             <i class="fa fa-robot"></i>
             <span class="link-text">Assistant AI</span>
+        </a>
+    </li>
+
+    <li class="nav-item logout-item" *ngIf="currentUser$ | async">
+        <a href="javascript:void(0)" (click)="logout()">
+            <i class="fa fa-sign-out-alt"></i>
+            <span class="link-text">Déconnexion</span>
         </a>
     </li>
 </ul>

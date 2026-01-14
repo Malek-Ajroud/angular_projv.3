@@ -1,6 +1,11 @@
+/**
+ * PURPOSE: Navigation menu for the application.
+ * CONTENT: Provides links to main features and handles user logout.
+ */
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterLink, RouterLinkActive } from '@angular/router';
+import { RouterLink, RouterLinkActive, Router } from '@angular/router';
+import { AuthService } from '../../services/auth.service';
 
 @Component({
     selector: 'app-sidebar',
@@ -10,5 +15,15 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
     styleUrls: ['./sidebar.component.css']
 })
 export class SidebarComponent {
-    // Mobile menu logic is handled by parent AppComponent via class toggling
+    currentUser$ = this.authService.currentUser$;
+
+    constructor(
+        private authService: AuthService,
+        private router: Router
+    ) { }
+
+    logout(): void {
+        this.authService.logout();
+        this.router.navigate(['/login']);
+    }
 }

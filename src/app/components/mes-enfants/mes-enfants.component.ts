@@ -1,3 +1,7 @@
+/**
+ * PURPOSE: Lists all child profiles registered by the parent.
+ * CONTENT: Displays cards for each child with summary information.
+ */
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';

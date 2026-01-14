@@ -1,3 +1,7 @@
+/**
+ * PURPOSE: Form to add or edit a child's details (Name, Age, School level).
+ * CONTENT: Handles input validation and communication with ChildService.
+ */
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
