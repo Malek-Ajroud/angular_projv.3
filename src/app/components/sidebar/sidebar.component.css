@@ -3,10 +3,10 @@
     display: flex;
     align-items: center;
     gap: 12px;
-    padding: 1.5rem;
+    padding: 1rem;
     background: rgba(91, 58, 140, 0.03);
     border-radius: var(--radius-md);
-    margin-bottom: 2rem;
+    margin-bottom: 1rem;
 }
 
 .user-avatar {
@@ -45,16 +45,38 @@
     text-overflow: ellipsis;
 }
 
-.logout-item {
-    margin-top: 1rem;
-    border-top: 1px solid #f1f5f9;
+/* Updated Logout Section */
+.logout-section {
+    /* margin-top managed by nav-links flex-grow */
     padding-top: 1rem;
+    border-top: 1px solid #f1f5f9;
+    margin-bottom: 0.5rem;
 }
 
-.logout-item a {
-    color: #ef4444 !important;
+.logout-section a {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 1rem 1.5rem;
+    text-decoration: none;
+    color: #ef4444;
+    /* Red color */
+    border-radius: var(--radius-md);
+    transition: all 0.3s ease;
+    font-weight: 500;
 }
 
-.logout-item a:hover {
-    background: rgba(239, 68, 68, 0.05) !important;
+.logout-section a:hover {
+    background: rgba(239, 68, 68, 0.05);
+    transform: translateX(5px);
+}
+
+.logout-section a i {
+    font-size: 1.1rem;
+}
+
+/* Override footer margin since logout-section now handles the spacing */
+.sidebar-footer {
+    margin-top: 0 !important;
+    padding-top: 0.5rem;
 }

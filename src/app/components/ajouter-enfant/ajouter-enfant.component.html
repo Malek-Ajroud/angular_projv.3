@@ -7,36 +7,36 @@
 
         <!-- Prénom -->
         <div class="form-group">
-            <label for="firstName">Prénom *</label>
-            <input type="text" id="firstName" name="firstName" class="form-control" [(ngModel)]="child.firstName"
-                #firstName="ngModel" [ngClass]="{ 'input-error': firstName.invalid && firstName.touched }" required
+            <label for="first_name">Prénom *</label>
+            <input type="text" id="first_name" name="first_name" class="form-control" [(ngModel)]="child.first_name"
+                #first_name="ngModel" [ngClass]="{ 'input-error': first_name.invalid && first_name.touched }" required
                 minlength="2" maxlength="50">
-            <div class="error-msg" *ngIf="firstName.touched && firstName.errors?.['required']">
+            <div class="error-msg" *ngIf="first_name.touched && first_name.errors?.['required']">
                 Le prénom est requis.
             </div>
-            <div class="error-msg" *ngIf="firstName.errors?.['minlength']">
+            <div class="error-msg" *ngIf="first_name.errors?.['minlength']">
                 Le prénom doit contenir au moins 2 caractères.
             </div>
         </div>
 
         <!-- Nom -->
         <div class="form-group">
-            <label for="lastName">Nom</label>
-            <input type="text" id="lastName" name="lastName" class="form-control" [(ngModel)]="child.lastName"
+            <label for="last_name">Nom</label>
+            <input type="text" id="last_name" name="last_name" class="form-control" [(ngModel)]="child.last_name"
                 minlength="2" maxlength="50">
         </div>
 
         <!-- Année scolaire -->
         <div class="form-group">
-            <label for="schoolYear">Niveau scolaire</label>
-            <input type="text" id="schoolYear" name="schoolYear" class="form-control" [(ngModel)]="child.schoolYear"
+            <label for="school_year">Niveau scolaire</label>
+            <input type="text" id="school_year" name="school_year" class="form-control" [(ngModel)]="child.school_year"
                 placeholder="Ex: CP, 6ème, ...">
         </div>
 
         <!-- School Name -->
         <div class="form-group">
-            <label for="schoolName">Nom de l'établissement scolaire</label>
-            <input type="text" id="schoolName" name="schoolName" class="form-control" [(ngModel)]="child.schoolName">
+            <label for="school_name">Nom de l'établissement scolaire</label>
+            <input type="text" id="school_name" name="school_name" class="form-control" [(ngModel)]="child.school_name">
         </div>
 
         <!-- Address -->
@@ -47,11 +47,11 @@
 
         <!-- Date de Naissance -->
         <div class="form-group">
-            <label for="birthDate">Date de naissance *</label>
-            <input type="date" id="birthDate" name="birthDate" class="form-control" [(ngModel)]="child.birthDate"
-                #birthDate="ngModel" (change)="validateDate()"
-                [ngClass]="{ 'input-error': (birthDate.invalid && birthDate.touched) || futureDateError }" required>
-            <div class="error-msg" *ngIf="birthDate.touched && birthDate.errors?.['required']">
+            <label for="birth_date">Date de naissance *</label>
+            <input type="date" id="birth_date" name="birth_date" class="form-control" [(ngModel)]="child.birth_date"
+                #birth_date="ngModel" (change)="validateDate()"
+                [ngClass]="{ 'input-error': (birth_date.invalid && birth_date.touched) || futureDateError }" required>
+            <div class="error-msg" *ngIf="birth_date.touched && birth_date.errors?.['required']">
                 La date de naissance est requise.
             </div>
             <div class="error-msg" *ngIf="futureDateError">

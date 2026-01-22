@@ -51,6 +51,7 @@ class JWT
         $parts = explode('.', $token);
 
         if (count($parts) !== 3) {
+            error_log("JWT Decode Failed: Token does not have 3 parts");
             return false;
         }
 
@@ -66,6 +67,7 @@ class JWT
         );
 
         if (!hash_equals($signature, $expectedSignature)) {
+            error_log("JWT Decode Failed: Signature mismatch");
             return false;
         }
 
@@ -74,6 +76,7 @@ class JWT
 
         // Check expiration
         if (isset($payload['exp']) && $payload['exp'] < time()) {
+            error_log("JWT Decode Failed: Token expired");
             return false;
         }
 
@@ -86,13 +89,35 @@ class JWT
      */
     public static function getTokenFromHeader()
     {
-        $headers = getallheaders();
+        $headers = function_exists('getallheaders') ? getallheaders() : [];
+        $authHeader = null;
 
-        if (isset($headers['Authorization'])) {
-            $authHeader = $headers['Authorization'];
+        // 1. Try getallheaders()
+        foreach ($headers as $key => $value) {
+            if (strtolower($key) === 'authorization') {
+                $authHeader = $value;
+                break;
+            }
+        }
+
+        // 2. Try $_SERVER['HTTP_AUTHORIZATION'] (Apache fallback)
+        if (!$authHeader && isset($_SERVER['HTTP_AUTHORIZATION'])) {
+            $authHeader = $_SERVER['HTTP_AUTHORIZATION'];
+        }
+
+        // 3. Try $_SERVER['REDIRECT_HTTP_AUTHORIZATION']
+        if (!$authHeader && isset($_SERVER['REDIRECT_HTTP_AUTHORIZATION'])) {
+            $authHeader = $_SERVER['REDIRECT_HTTP_AUTHORIZATION'];
+        }
+
+        if ($authHeader) {
             if (preg_match('/Bearer\s+(.*)$/i', $authHeader, $matches)) {
                 return $matches[1];
+            } else {
+                error_log("JWT Handler: Auth header found but Bearer format invalid: " . $authHeader);
             }
+        } else {
+            error_log("JWT Handler: No Authorization header found in request. Headers: " . json_encode($headers));
         }
 
         return null;
@@ -107,10 +132,15 @@ class JWT
         $token = self::getTokenFromHeader();
 
         if (!$token) {
+            error_log("JWT verifyRequest: No token found in header");
             return false;
         }
 
-        return self::decode($token);
+        $decoded = self::decode($token);
+        if (!$decoded) {
+            error_log("JWT verifyRequest: Token decoding failed");
+        }
+        return $decoded;
     }
 
     /**

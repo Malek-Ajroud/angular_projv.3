@@ -16,7 +16,7 @@ import { ChildService, Child } from '../../services/child.service';
     styleUrls: ['./ajouter-enfant.component.css']
 })
 export class AjouterEnfantComponent implements OnInit {
-    // Using partial because for new child ID is not present initially
+
     child: any = {
         gender: 'boy'
     };
@@ -39,12 +39,12 @@ export class AjouterEnfantComponent implements OnInit {
                 next: (data) => {
                     this.child = data;
                     // Format date for input[type=date] which needs yyyy-MM-dd
-                    if (this.child.birthDate) {
-                        const d = new Date(this.child.birthDate);
+                    if (this.child.birth_date) {
+                        const d = new Date(this.child.birth_date);
                         const year = d.getFullYear();
                         const month = ('0' + (d.getMonth() + 1)).slice(-2);
                         const day = ('0' + d.getDate()).slice(-2);
-                        this.child.birthDate = `${year}-${month}-${day}`;
+                        this.child.birth_date = `${year}-${month}-${day}`;
                     }
                 },
                 error: (err) => {
@@ -56,8 +56,8 @@ export class AjouterEnfantComponent implements OnInit {
     }
 
     validateDate(): void {
-        if (!this.child.birthDate) return;
-        const date = new Date(this.child.birthDate);
+        if (!this.child.birth_date) return;
+        const date = new Date(this.child.birth_date);
         const now = new Date();
         if (date > now) {
             this.futureDateError = true;
@@ -69,13 +69,6 @@ export class AjouterEnfantComponent implements OnInit {
     submitForm(form: any): void {
         if (form.valid && !this.futureDateError) {
             this.isSubmitting = true;
-
-            // Ensure birthDate is Date object for service if needed, 
-            // but service takes object. Service logic might need adjustment if it expects Date vs string.
-            // Our service implementation:
-            // if (typeof child.birthDate === 'string') child.birthDate = new Date(child.birthDate);
-            // So string from input is fine.
-
             let obs;
             if (this.isEditMode) {
                 obs = this.childService.updateChild(this.child);

@@ -57,7 +57,7 @@ class User
      */
     public function findByEmail($email)
     {
-        $stmt = $this->db->prepare("SELECT * FROM users WHERE email = :email");
+        $stmt = $this->db->prepare("SELECT id, name, email, password_hash, role, created_at FROM users WHERE email = :email");
         $stmt->execute(['email' => $email]);
         return $stmt->fetch();
     }
@@ -67,9 +67,14 @@ class User
      * @param int $id
      * @return array|false
      */
+    /**
+     * Find user by ID
+     * @param int $id
+     * @return array|false
+     */
     public function findById($id)
     {
-        $stmt = $this->db->prepare("SELECT id, name, email, created_at FROM users WHERE id = :id");
+        $stmt = $this->db->prepare("SELECT id, name, email, role, created_at FROM users WHERE id = :id");
         $stmt->execute(['id' => $id]);
         return $stmt->fetch();
     }
@@ -108,6 +113,7 @@ class User
             'id' => $user['id'],
             'name' => $user['name'],
             'email' => $user['email'],
+            'role' => $user['role'] ?? 'user', // Default to user if not set
             'created_at' => $user['created_at']
         ];
     }

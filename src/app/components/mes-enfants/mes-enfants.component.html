@@ -30,12 +30,12 @@
                     style="width: 60px; height: 60px; background: #e3eeff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">
                     <span *ngIf="child.gender === 'boy'">👦</span>
                     <span *ngIf="child.gender === 'girl'">👧</span>
-                    
+
                 </div>
                 <div>
-                    <h3 style="margin-bottom: 0.2rem;">{{ child.firstName }}</h3>
-                    <p style="font-size: 0.9rem;">{{ getAge(child.birthDate) }} ans</p>
-                    <p style="font-size: 0.8rem; opacity: 0.7;">Né(e) le {{ child.birthDate | date:'dd/MM/yyyy' }}</p>
+                    <h3 style="margin-bottom: 0.2rem;">{{ child.first_name }}</h3>
+                    <p style="font-size: 0.9rem;">{{ getAge(child.birth_date) }} ans</p>
+                    <p style="font-size: 0.8rem; opacity: 0.7;">Né(e) le {{ child.birth_date | date:'dd/MM/yyyy' }}</p>
                 </div>
             </div>
 

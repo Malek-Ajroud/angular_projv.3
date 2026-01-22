@@ -12,6 +12,7 @@ export interface User {
     id: number;
     name: string;
     email: string;
+    role?: 'user' | 'admin';
     created_at: string;
 }
 
@@ -55,11 +56,11 @@ export class AuthService {
                     if (response.success) {
                         this.currentUserSubject.next(response.data.user);
                     } else {
-                        this.logout();
+                        // this.logout(); // Disabled during debug
                     }
                 },
                 error: () => {
-                    this.logout();
+                    // this.logout(); // Disabled during debug
                 }
             });
         }
@@ -141,6 +142,14 @@ export class AuthService {
      */
     isAuthenticated(): boolean {
         return !!this.getToken();
+    }
+
+    /**
+     * Check if user is admin
+     */
+    isAdmin(): boolean {
+        const user = this.currentUserSubject.value;
+        return user?.role === 'admin';
     }
 
     /**

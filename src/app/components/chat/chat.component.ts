@@ -81,6 +81,11 @@ export class ChatComponent implements OnInit, AfterViewChecked {
                         sender: m.role === 'user' ? 'user' : 'ai',
                         timestamp: new Date(m.timestamp)
                     }));
+                    // Sync with AI service
+                    this.aiChatService.setHistory(res.data.map((m: any) => ({
+                        role: m.role === 'ai' ? 'assistant' : m.role,
+                        content: m.content
+                    })));
                 }
                 this.isTyping = false;
                 this.shouldScroll = true;
@@ -165,8 +170,14 @@ export class ChatComponent implements OnInit, AfterViewChecked {
 
         // Call streaming service
         let fullResponse = '';
+        let firstChunkReceived = false;
+
         this.aiChatService.sendMessageStream(messageText).subscribe({
             next: (chunk) => {
+                if (!firstChunkReceived) {
+                    firstChunkReceived = true;
+                    this.isTyping = false; // Hide indicator when first chunk arrives
+                }
                 fullResponse += chunk;
                 this.messages[aiMessageIndex].text = fullResponse;
                 this.shouldScroll = true;

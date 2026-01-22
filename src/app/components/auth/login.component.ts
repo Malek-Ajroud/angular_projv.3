@@ -1,7 +1,3 @@
-/**
- * PURPOSE: Handles user login and session initialization.
- * CONTENT: Login form, credential validation, and redirection to the dashboard.
- */
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -39,7 +35,13 @@ export class LoginComponent {
             next: (response) => {
                 this.isLoading = false;
                 if (response.success) {
-                    this.router.navigate(['/chat']);
+                    const user = response.data.user;
+
+                    if (user.role === 'admin') {
+                        this.router.navigate(['/admin']);
+                    } else {
+                        this.router.navigate(['/accueil']);
+                    }
                 }
             },
             error: (error) => {

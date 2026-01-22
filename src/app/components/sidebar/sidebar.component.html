@@ -14,14 +14,23 @@
 </div>
 
 <ul class="nav-links">
-    <!-- Temporarily hidden menu items -->
-    <!--
+
+
     <li class="nav-item">
         <a routerLink="/ajouter-enfant" routerLinkActive="active" class="btn-soft-pink">
             <i class="fa fa-plus-circle"></i> Ajouter un enfant
         </a>
     </li>
-
+    <li class="nav-item">
+        <a routerLink="/questionnaire" routerLinkActive="active" class="btn-soft-green">
+            <i class="fa fa-clipboard-list"></i> Questionnaire
+        </a>
+    </li>
+    <li class="nav-item">
+        <a routerLink="/bibliotheque" routerLinkActive="active" class="btn-soft-chestnut">
+            <i class="fa fa-book"></i> Bibliothèque
+        </a>
+    </li>
     <li class="nav-item">
         <a routerLink="/gerer-compte" routerLinkActive="active" class="btn-soft-blue">
             <i class="fa fa-user-cog"></i> Gérer mon compte
@@ -48,9 +57,7 @@
             <i class="fa fa-lightbulb"></i> Conseils & Astuces
         </a>
     </li>
-    -->
 
-    <!-- Only showing Assistant AI for now -->
     <li class="nav-item">
         <a routerLink="/chat" routerLinkActive="active">
             <i class="fa fa-robot"></i>
@@ -58,13 +65,14 @@
         </a>
     </li>
 
-    <li class="nav-item logout-item" *ngIf="currentUser$ | async">
-        <a href="javascript:void(0)" (click)="logout()">
-            <i class="fa fa-sign-out-alt"></i>
-            <span class="link-text">Déconnexion</span>
-        </a>
-    </li>
 </ul>
+
+<div class="logout-section" *ngIf="currentUser$ | async">
+    <a href="javascript:void(0)" (click)="logout()">
+        <i class="fa fa-sign-out-alt"></i>
+        <span>Déconnexion</span>
+    </a>
+</div>
 
 <div class="sidebar-footer">
     <p>&copy; 2026 Mon Espace Parent</p>

@@ -37,10 +37,10 @@ export class MesEnfantsComponent implements OnInit {
         });
     }
 
-    getAge(birthDate: string | Date): number {
-        if (!birthDate) return 0;
+    getAge(birth_date: string | Date): number {
+        if (!birth_date) return 0;
         const today = new Date();
-        const dob = new Date(birthDate);
+        const dob = new Date(birth_date);
         let age = today.getFullYear() - dob.getFullYear();
         const m = today.getMonth() - dob.getMonth();
         if (m < 0 || (m === 0 && today.getDate() < dob.getDate())) {

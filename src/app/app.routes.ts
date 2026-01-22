@@ -17,6 +17,7 @@ import { ConseilsComponent } from './components/conseils/conseils.component';
 import { LoginComponent } from './components/auth/login.component';
 import { SignupComponent } from './components/auth/signup.component';
 import { authGuard } from './guards/auth.guard';
+import { adminGuard } from './guards/admin.guard';
 
 export const routes: Routes = [
     { path: '', redirectTo: 'login', pathMatch: 'full' },
@@ -30,5 +31,10 @@ export const routes: Routes = [
     { path: 'calendrier', component: CalendrierComponent },
     { path: 'gerer-compte', component: GererCompteComponent },
     { path: 'conseils', component: ConseilsComponent },
+    {
+        path: 'admin',
+        loadComponent: () => import('./components/admin/admin-dashboard/admin-dashboard.component').then(m => m.AdminDashboardComponent),
+        canActivate: [adminGuard]
+    },
     { path: '**', redirectTo: 'login' }
 ];

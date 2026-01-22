@@ -6,6 +6,7 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
+import { AuthService } from './auth.service';
 
 export interface ChatMessage {
     text: string;
@@ -38,7 +39,16 @@ RÈGLES DE RÉPONSE :
         { role: 'system', content: this.SYSTEM_PROMPT }
     ];
 
-    constructor(private http: HttpClient) { }
+    constructor(
+        private http: HttpClient,
+        private authService: AuthService
+    ) {
+        this.authService.currentUser$.subscribe(user => {
+            if (!user) {
+                this.clearHistory();
+            }
+        });
+    }
 
     sendMessageStream(userMessage: string): Observable<string> {
         // Add user message to conversation history
@@ -49,9 +59,16 @@ RÈGLES DE RÉPONSE :
 
         return new Observable(observer => {
             const body = {
-                model: 'llama3.2',
+                model: 'gemma3:8b',
                 messages: this.conversationHistory,
-                stream: true
+                stream: true,
+                options: {
+                    temperature: 0.3,
+                    top_p: 0.85,
+                    num_ctx: 128000,
+                    num_predict: 1000
+                },
+                keep_alive: "1h"
             };
 
             fetch(this.apiUrl, {
@@ -69,10 +86,19 @@ RÈGLES DE RÉPONSE :
                     const reader = response.body?.getReader();
                     const decoder = new TextDecoder();
                     let fullResponse = '';
+                    let buffer = '';
 
                     const readChunk = (): void => {
                         reader?.read().then(({ done, value }) => {
                             if (done) {
+                                // Process any remaining content in buffer
+                                if (buffer.trim()) {
+                                    this.processJsonLines(buffer, (content) => {
+                                        fullResponse += content;
+                                        observer.next(content);
+                                    });
+                                }
+
                                 // Add AI response to conversation history
                                 this.conversationHistory.push({
                                     role: 'assistant',
@@ -83,18 +109,17 @@ RÈGLES DE RÉPONSE :
                             }
 
                             const chunk = decoder.decode(value, { stream: true });
-                            const lines = chunk.split('\n').filter(line => line.trim() !== '');
+                            buffer += chunk;
 
-                            for (const line of lines) {
-                                try {
-                                    const json = JSON.parse(line);
-                                    if (json.message?.content) {
-                                        fullResponse += json.message.content;
-                                        observer.next(json.message.content);
-                                    }
-                                } catch (e) {
-                                    // Skip invalid JSON lines
-                                }
+                            const lastNewlineIndex = buffer.lastIndexOf('\n');
+                            if (lastNewlineIndex !== -1) {
+                                const linesToProcess = buffer.substring(0, lastNewlineIndex);
+                                buffer = buffer.substring(lastNewlineIndex + 1);
+
+                                this.processJsonLines(linesToProcess, (content) => {
+                                    fullResponse += content;
+                                    observer.next(content);
+                                });
                             }
 
                             readChunk();
@@ -111,9 +136,30 @@ RÈGLES DE RÉPONSE :
         });
     }
 
+    private processJsonLines(text: string, onContent: (content: string) => void): void {
+        const lines = text.split('\n').filter(line => line.trim() !== '');
+        for (const line of lines) {
+            try {
+                const json = JSON.parse(line);
+                if (json.message?.content) {
+                    onContent(json.message.content);
+                }
+            } catch (e) {
+                // Skip invalid JSON lines (might be partial)
+            }
+        }
+    }
+
     clearHistory(): void {
         this.conversationHistory = [
             { role: 'system', content: this.SYSTEM_PROMPT }
+        ];
+    }
+
+    setHistory(messages: Array<{ role: string; content: string }>): void {
+        this.conversationHistory = [
+            { role: 'system', content: this.SYSTEM_PROMPT },
+            ...messages
         ];
     }
 }
