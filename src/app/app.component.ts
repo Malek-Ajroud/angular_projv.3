@@ -6,7 +6,7 @@ import { ContextService } from './services/context.service';
 import { HomeworkService } from './services/homework.service';
 import { AiChatService } from './services/ai-chat.service';
 import { LibraryService } from './services/library.service';
-
+import { AuthService } from './services/auth.service';
 import { switchMap } from 'rxjs/operators';
 
 @Component({
@@ -18,8 +18,10 @@ import { switchMap } from 'rxjs/operators';
 })
 export class AppComponent implements OnInit {
   mobileMenuOpen = false;
+  currentUser$ = this.authService.currentUser$;
 
   constructor(
+    private authService: AuthService,
     private contextService: ContextService,
     private homeworkService: HomeworkService,
     private aiChatService: AiChatService,
@@ -32,15 +34,15 @@ export class AppComponent implements OnInit {
     this.contextService.simulateMockData();
 
     // Chaînage API 1 (Recherche) -> API 2 (Détails) -> Step 6 (IA)
+    // Utilise l'adapteur getProfile() pour compatibilité
     const profile = this.contextService.getProfile();
+
     if (profile) {
       console.log("AppComponent: Démarrage de la recherche automatique de devoirs...");
       this.homeworkService.searchHomework(profile).pipe(
         switchMap(res => {
           console.log("AppComponent: [ÉTAPE 4] Réponse API 1 (TYPE):", typeof res);
-          console.log("AppComponent: [ÉTAPE 4] Réponse API 1 (VALEUR):", JSON.stringify(res, null, 2));
-
-          // Recherche de l'ID du devoir (ou idMatiere selon le retour utilisateur)
+          // console.log("AppComponent: [ÉTAPE 4] Réponse API 1 (VALEUR):", JSON.stringify(res, null, 2));
 
           const homeworks = res?.results?.homeWork || [];
           let targetHomework = homeworks[0];
@@ -61,12 +63,7 @@ export class AppComponent implements OnInit {
 
           const firstHomework = targetHomework;
 
-          if (firstHomework) {
-            console.log("AppComponent: Clés disponibles dans l'objet devoir:", Object.keys(firstHomework));
-          }
-
           // Priorité à l'ID de la matière si présent, sinon fallback sur les autres IDs
-          // Le user indique: "prendre l'id de la matiere"
           const homeworkId = firstHomework?.idMatiere || firstHomework?.idSubject || firstHomework?.idHomeWork || firstHomework?.id;
 
           if (homeworkId) {
@@ -95,7 +92,7 @@ export class AppComponent implements OnInit {
             lien: f.path
           }));
 
-          if (files.length > 0) {
+          if (files.length > 0 && profile) {
             const entry = {
               homeworkTitle: title,
               files: files,
@@ -108,16 +105,15 @@ export class AppComponent implements OnInit {
             console.log("AppComponent: Aucun fichier PDF trouvé dans ce document.");
           }
 
-          // Déclencher l'IA (Optionnel : peut-être un message plus discret ?)
+          // Déclencher l'IA
           console.log("AppComponent: Initialisation de l'Assistant IA...");
-          this.aiChatService.sendMessageStream("Bonjour ! J'ai trouvé un document pour votre enfant. Comment puis-je vous aider aujourd'hui ?").subscribe({
+          this.aiChatService.sendMessageStream("Bonjour ! J'ai trouvé un document pour votre enfant basés sur ses besoins. Comment puis-je vous aider ?").subscribe({
             next: (chunk: string) => { /* chunk logic if needed */ },
-            error: (err) => console.error("IA Erreur :", err)
+            error: (err: any) => console.error("IA Erreur :", err)
           });
         },
-        error: (err) => {
+        error: (err: any) => {
           console.error("AppComponent: Erreur lors de la récupération automatique des documents.", err);
-          // We don't block the app, just log the error.
         }
       });
     }

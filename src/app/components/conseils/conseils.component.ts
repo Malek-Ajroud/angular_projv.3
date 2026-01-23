@@ -1,14 +1,18 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { TipService } from '../../services/tip.service';
+import { Tip } from '../../models/app.models';
+import { AuthService } from '../../services/auth.service';
 
 @Component({
     selector: 'app-conseils',
     standalone: true,
-    imports: [CommonModule],
+    imports: [CommonModule, FormsModule],
     templateUrl: './conseils.component.html',
     styleUrls: ['./conseils.component.css']
 })
-export class ConseilsComponent {
+export class ConseilsComponent implements OnInit {
     categories = [
         { id: 'all', name: 'Tous', icon: '✨' },
         { id: 'sante', name: 'Santé', icon: '💉' },
@@ -19,83 +23,41 @@ export class ConseilsComponent {
         { id: 'securite', name: 'Sécurité', icon: '🏠' }
     ];
 
-    tips = [
-        {
-            id: 1,
-            category: 'sante',
-            title: 'Suivi des vaccinations',
-            description: 'Gardez un carnet de santé à jour et programmez des rappels pour ne manquer aucun vaccin important.',
-            icon: '💉',
-            color: 'gradient-sante-1'
-        },
-        {
-            id: 2,
-            category: 'alimentation',
-            title: 'Diversification alimentaire',
-            description: 'Introduisez de nouveaux aliments progressivement, un à la fois, pour détecter d\'éventuelles allergies.',
-            icon: '🥗',
-            color: 'gradient-alim-1'
-        },
-        {
-            id: 3,
-            category: 'sommeil',
-            title: 'Routine du coucher',
-            description: 'Établissez une routine apaisante : bain, histoire, câlin. La régularité aide l\'enfant à mieux dormir.',
-            icon: '😴',
-            color: 'gradient-sommeil'
-        },
-        {
-            id: 4,
-            category: 'education',
-            title: 'Temps d\'écran limité',
-            description: 'Limitez l\'exposition aux écrans selon l\'âge. Privilégiez les activités physiques et créatives.',
-            icon: '📱',
-            color: 'gradient-educ-1'
-        },
-        {
-            id: 5,
-            category: 'sante',
-            title: 'Hygiène dentaire',
-            description: 'Brossez les dents de votre enfant dès l\'apparition de la première dent, 2 fois par jour.',
-            icon: '🦷',
-            color: 'gradient-sante-2'
-        },
-        {
-            id: 6,
-            category: 'developpement',
-            title: 'Lecture quotidienne',
-            description: 'Lisez des histoires chaque jour pour stimuler le langage et créer un moment de complicité.',
-            icon: '📚',
-            color: 'gradient-dev'
-        },
-        {
-            id: 7,
-            category: 'alimentation',
-            title: 'Hydratation régulière',
-            description: 'Proposez de l\'eau régulièrement, surtout en été. Évitez les boissons sucrées.',
-            icon: '💧',
-            color: 'gradient-alim-2'
-        },
-        {
-            id: 8,
-            category: 'education',
-            title: 'Communication positive',
-            description: 'Utilisez des phrases positives. Dites "marche doucement" plutôt que "ne cours pas".',
-            icon: '💬',
-            color: 'gradient-educ-2'
-        },
-        {
-            id: 9,
-            category: 'securite',
-            title: 'Sécurité à la maison',
-            description: 'Installez des protections sur les prises, coins de table et escaliers pour prévenir les accidents.',
-            icon: '🏠',
-            color: 'gradient-secu'
-        }
-    ];
-
+    tips: Tip[] = [];
+    filteredTips: Tip[] = [];
     selectedCategory = 'all';
-    filteredTips = [...this.tips];
+    loading = true;
+
+    // Admin State
+    isAdmin = false;
+    showModal = false;
+    isEditing = false;
+    currentTip: Tip = this.getEmptyTip();
+
+    constructor(
+        private tipService: TipService,
+        private authService: AuthService
+    ) { }
+
+    ngOnInit(): void {
+        this.isAdmin = this.authService.isAdmin();
+        this.loadTips();
+    }
+
+    loadTips(): void {
+        this.loading = true;
+        this.tipService.getTips().subscribe({
+            next: (data) => {
+                this.tips = data;
+                this.filterByCategory(this.selectedCategory);
+                this.loading = false;
+            },
+            error: (err) => {
+                console.error('Error loading tips', err);
+                this.loading = false;
+            }
+        });
+    }
 
     filterByCategory(category: string): void {
         this.selectedCategory = category;
@@ -109,4 +71,62 @@ export class ConseilsComponent {
     getGradientClass(color: string): string {
         return color;
     }
+
+    // Admin Actions
+    openAddModal(): void {
+        this.isEditing = false;
+        this.currentTip = this.getEmptyTip();
+        this.showModal = true;
+    }
+
+    openEditModal(tip: Tip): void {
+        this.isEditing = true;
+        this.currentTip = { ...tip };
+        this.showModal = true;
+    }
+
+    closeModal(): void {
+        this.showModal = false;
+    }
+
+    getEmptyTip(): Tip {
+        return {
+            category: 'sante',
+            title: '',
+            description: '',
+            icon: 'lightbulb',
+            color: 'gradient-sante-1'
+        };
+    }
+
+    saveTip(): void {
+        if (this.isEditing && this.currentTip.id) {
+            this.tipService.updateTip(this.currentTip.id, this.currentTip).subscribe({
+                next: () => {
+                    this.loadTips();
+                    this.closeModal();
+                },
+                error: (err) => console.error('Error updating tip', err)
+            });
+        } else {
+            this.tipService.createTip(this.currentTip).subscribe({
+                next: () => {
+                    this.loadTips();
+                    this.closeModal();
+                },
+                error: (err) => console.error('Error creating tip', err)
+            });
+        }
+    }
+
+    deleteTip(id: number | undefined): void {
+        if (!id) return;
+        if (confirm('Êtes-vous sûr de vouloir supprimer cette astuce ?')) {
+            this.tipService.deleteTip(id).subscribe({
+                next: () => this.loadTips(),
+                error: (err) => console.error('Error deleting tip', err)
+            });
+        }
+    }
 }
+

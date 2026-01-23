@@ -1,53 +1,28 @@
+import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { Observable, of } from 'rxjs';
-import { delay } from 'rxjs/operators';
-
-export interface User {
-    fullName: string;
-    email: string;
-    phone: string;
-    notifications: {
-        email: boolean;
-        sms: boolean;
-    };
-}
+import { Observable, map } from 'rxjs';
+import { environment } from '../../environments/environment';
+import { User } from '../models/app.models';
 
 @Injectable({
     providedIn: 'root'
 })
 export class AccountService {
-    private user: User | null = {
-        fullName: 'Marie Dupont',
-        email: 'marie.dupont@example.com',
-        phone: '06 12 34 56 78',
-        notifications: {
-            email: true,
-            sms: false
-        }
-    };
+    private apiUrl = `${environment.PHP_API_URL}/account.php`;
+
+    constructor(private http: HttpClient) { }
 
     getAccount(): Observable<User | null> {
-        // Simulate network delay
-        return of(this.user ? { ...this.user } : null).pipe(delay(400));
+        return this.http.get<any>(this.apiUrl).pipe(
+            map(response => response.success ? response.data : null)
+        );
     }
 
-    updateAccount(updatedUser: User): Observable<User> {
-        return new Observable(observer => {
-            setTimeout(() => {
-                this.user = { ...updatedUser };
-                observer.next(this.user);
-                observer.complete();
-            }, 800);
-        });
+    updateAccount(updatedUser: User): Observable<any> {
+        return this.http.post<any>(this.apiUrl, updatedUser);
     }
 
-    deleteAccount(): Observable<void> {
-        return new Observable(observer => {
-            setTimeout(() => {
-                this.user = null;
-                observer.next();
-                observer.complete();
-            }, 1000);
-        });
+    deleteAccount(): Observable<any> {
+        return this.http.delete<any>(this.apiUrl);
     }
 }

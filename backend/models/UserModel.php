@@ -24,9 +24,11 @@ class User
      * @param string $name
      * @param string $email
      * @param string $password
+     * @param string $role
+     * @param string|null $phone
      * @return array|false
      */
-    public function create($name, $email, $password)
+    public function create($name, $email, $password, $role = 'user', $phone = null)
     {
         // Check if email already exists
         if ($this->findByEmail($email)) {
@@ -36,14 +38,16 @@ class User
         $passwordHash = password_hash($password, PASSWORD_BCRYPT);
 
         $stmt = $this->db->prepare("
-            INSERT INTO users (name, email, password_hash) 
-            VALUES (:name, :email, :password_hash)
+            INSERT INTO users (name, email, password_hash, role, phone) 
+            VALUES (:name, :email, :password_hash, :role, :phone)
         ");
 
         $stmt->execute([
             'name' => $name,
             'email' => $email,
-            'password_hash' => $passwordHash
+            'password_hash' => $passwordHash,
+            'role' => $role,
+            'phone' => $phone
         ]);
 
         $userId = $this->db->lastInsertId();
@@ -74,7 +78,11 @@ class User
      */
     public function findById($id)
     {
+<<<<<<< HEAD:backend/models/UserModel.php
         $stmt = $this->db->prepare("SELECT id, name, email, role, created_at FROM users WHERE id = :id");
+=======
+        $stmt = $this->db->prepare("SELECT id, name, email, phone, role, created_at FROM users WHERE id = :id");
+>>>>>>> 2615bcd57fe52ad60051ca3ce24a575aa79ae919:backend/models/User.php
         $stmt->execute(['id' => $id]);
         return $stmt->fetch();
     }
@@ -103,6 +111,35 @@ class User
     }
 
     /**
+     * Update user profile
+     * @param int $id
+     * @param array $data
+     * @return bool
+     */
+    public function update($id, $data)
+    {
+        $sql = "UPDATE users SET name = :name, email = :email, phone = :phone WHERE id = :id";
+        $stmt = $this->db->prepare($sql);
+        return $stmt->execute([
+            'id' => $id,
+            'name' => $data['name'],
+            'email' => $data['email'],
+            'phone' => $data['phone'] ?? null
+        ]);
+    }
+
+    /**
+     * Delete user
+     * @param int $id
+     * @return bool
+     */
+    public function delete($id)
+    {
+        $stmt = $this->db->prepare("DELETE FROM users WHERE id = :id");
+        return $stmt->execute(['id' => $id]);
+    }
+
+    /**
      * Get user data without sensitive information
      * @param array $user
      * @return array
@@ -111,11 +148,35 @@ class User
     {
         return [
             'id' => $user['id'],
+<<<<<<< HEAD:backend/models/UserModel.php
             'name' => $user['name'],
             'email' => $user['email'],
             'role' => $user['role'] ?? 'user', // Default to user if not set
             'created_at' => $user['created_at']
+=======
+            'name' => $user['name'] ?? '',
+            'email' => $user['email'] ?? '',
+            'phone' => $user['phone'] ?? '',
+            'role' => $user['role'] ?? 'user',
+            'created_at' => $user['created_at'] ?? null
+>>>>>>> 2615bcd57fe52ad60051ca3ce24a575aa79ae919:backend/models/User.php
         ];
+    }
+
+    /**
+     * Change user password
+     * @param int $id
+     * @param string $newPassword
+     * @return bool
+     */
+    public function changePassword($id, $newPassword)
+    {
+        $passwordHash = password_hash($newPassword, PASSWORD_BCRYPT);
+        $stmt = $this->db->prepare("UPDATE users SET password_hash = :password_hash WHERE id = :id");
+        return $stmt->execute([
+            'id' => $id,
+            'password_hash' => $passwordHash
+        ]);
     }
 }
 ?>

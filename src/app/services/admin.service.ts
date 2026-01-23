@@ -1,4 +1,5 @@
 import { Injectable } from '@angular/core';
+<<<<<<< HEAD
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
@@ -24,11 +25,15 @@ export interface UserDetails {
         messages_sent_count: number;
     };
 }
+=======
+import { BehaviorSubject } from 'rxjs';
+>>>>>>> 2615bcd57fe52ad60051ca3ce24a575aa79ae919
 
 @Injectable({
     providedIn: 'root'
 })
 export class AdminService {
+<<<<<<< HEAD
     private apiUrl = environment.PHP_API_URL + '/admin';
 
     constructor(private http: HttpClient) { }
@@ -47,5 +52,16 @@ export class AdminService {
 
     deleteUser(id: number): Observable<any> {
         return this.http.delete(`${this.apiUrl}/users.php?id=${id}`);
+=======
+    private searchTermSubject = new BehaviorSubject<string>('');
+    public searchTerm$ = this.searchTermSubject.asObservable();
+
+    setSearchTerm(term: string): void {
+        this.searchTermSubject.next(term);
+    }
+
+    getSearchTerm(): string {
+        return this.searchTermSubject.value;
+>>>>>>> 2615bcd57fe52ad60051ca3ce24a575aa79ae919
     }
 }

@@ -5,8 +5,7 @@
   </button>
 
   <!-- Sidebar Navigation -->
-  <!-- We apply the 'active' class to the container based on state -->
-  <div class="sidebar" [class.active]="mobileMenuOpen">
+  <div class="sidebar" [class.active]="mobileMenuOpen" *ngIf="currentUser$ | async">
     <app-sidebar></app-sidebar>
   </div>
 

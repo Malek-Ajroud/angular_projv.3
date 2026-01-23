@@ -1,4 +1,4 @@
-<?php
+<!--?php
 // api/searchHomework.php
 
 header('Access-Control-Allow-Origin: *');

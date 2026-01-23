@@ -1,8 +1,16 @@
 <?php
 /**
  * Verify Token API Endpoint
- * POST /api/auth/verify
  */
+
+// Prevent PHP from outputting errors as HTML/Text
+error_reporting(0);
+ini_set('display_errors', 0);
+
+// Clear any previous output (whitespace, notices)
+if (ob_get_length())
+    ob_clean();
+ob_start();
 
 require_once __DIR__ . '/../../config/cors.php';
 require_once __DIR__ . '/../../models/UserModel.php';

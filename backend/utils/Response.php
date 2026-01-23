@@ -76,4 +76,3 @@ class Response
         self::error('Validation failed', 422, $errors);
     }
 }
-?>

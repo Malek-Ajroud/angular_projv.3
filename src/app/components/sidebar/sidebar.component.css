@@ -1,3 +1,10 @@
+:host {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    width: 100%;
+}
+
 /* Sidebar Sidebar Profile and Logout Styles */
 .user-profile {
     display: flex;
@@ -45,6 +52,7 @@
     text-overflow: ellipsis;
 }
 
+<<<<<<< HEAD
 /* Updated Logout Section */
 .logout-section {
     /* margin-top managed by nav-links flex-grow */
@@ -79,4 +87,64 @@
 .sidebar-footer {
     margin-top: 0 !important;
     padding-top: 0.5rem;
+=======
+/* Logout Button at Bottom */
+.btn-logout-bottom {
+    width: 100%;
+    padding: 0.8rem 1rem;
+    background: transparent;
+    color: var(--primary-purple);
+    border: 1px solid rgba(91, 58, 140, 0.2);
+    border-radius: var(--radius-md);
+    font-weight: 600;
+    font-size: 0.9rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-bottom: 1.5rem;
+    transition: all 0.3s ease;
+}
+
+.btn-logout-bottom:hover {
+    background: rgba(91, 58, 140, 0.05);
+    border-color: var(--primary-purple);
+    transform: translateY(-2px);
+}
+
+.btn-logout-bottom i {
+    font-size: 1rem;
+    color: var(--accent-pink);
+}
+
+/* Scrollable Nav Container */
+.nav-container {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    margin-bottom: 1rem;
+    padding-right: 5px;
+    /* Space for scrollbar */
+    min-height: 0;
+    /* Important for flexbox scrolling */
+}
+
+.nav-container::-webkit-scrollbar {
+    width: 6px;
+}
+
+.nav-container::-webkit-scrollbar-track {
+    background: #f1f5f9;
+    border-radius: 10px;
+}
+
+.nav-container::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 10px;
+}
+
+.nav-container::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+>>>>>>> 2615bcd57fe52ad60051ca3ce24a575aa79ae919
 }

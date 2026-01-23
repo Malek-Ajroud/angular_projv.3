@@ -1,12 +1,16 @@
 <?php
 /**
- * PURPOSE: Registers new users and hashes passwords.
- * CONTENT: Endpoint to create a new user account in the database.
- */
-/**
  * Signup API Endpoint
- * POST /api/auth/signup
  */
+
+// Prevent PHP from outputting errors as HTML/Text
+error_reporting(0);
+ini_set('display_errors', 0);
+
+// Clear any previous output (whitespace, notices)
+if (ob_get_length())
+    ob_clean();
+ob_start();
 
 require_once __DIR__ . '/../../config/cors.php';
 require_once __DIR__ . '/../../models/UserModel.php';
@@ -45,6 +49,7 @@ if (!empty($errors)) {
 }
 
 // Create user
+<<<<<<< HEAD
 try {
     $userModel = new User();
     $user = $userModel->create(
@@ -52,6 +57,16 @@ try {
         $input['email'],
         $input['password']
     );
+=======
+$userModel = new User();
+$user = $userModel->create(
+    $input['name'],
+    $input['email'],
+    $input['password'],
+    'user',
+    $input['phone'] ?? null
+);
+>>>>>>> 2615bcd57fe52ad60051ca3ce24a575aa79ae919
 
     if (!$user) {
         Response::error('Cet email est déjà utilisé', 409);
@@ -73,4 +88,19 @@ try {
 } catch (Exception $e) {
     Response::error('Une erreur inattendue est survenue : ' . $e->getMessage(), 500);
 }
+<<<<<<< HEAD
 ?>
+=======
+
+// Generate JWT token
+$token = JWT::encode([
+    'user_id' => $user['id'],
+    'email' => $user['email']
+]);
+
+// Return success response
+Response::success([
+    'token' => $token,
+    'user' => $userModel->sanitize($user)
+], 'Compte créé avec succès', 201);
+>>>>>>> 2615bcd57fe52ad60051ca3ce24a575aa79ae919
