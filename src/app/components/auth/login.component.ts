@@ -39,12 +39,20 @@ export class LoginComponent {
             next: (response) => {
                 this.isLoading = false;
                 if (response.success) {
-                    this.router.navigate(['/chat']);
+                    console.log('Login success:', response);
+                    if (this.authService.isAdmin()) {
+                        this.router.navigate(['/admin']);
+                    } else {
+                        this.router.navigate(['/accueil']);
+                    }
+                } else {
+                    this.errorMessage = response.message || 'Erreur de connexion';
                 }
             },
             error: (error) => {
                 this.isLoading = false;
-                this.errorMessage = error.error?.message || 'Erreur de connexion. Veuillez réessayer.';
+                console.error('Login error details:', error);
+                this.errorMessage = error.error?.message || `Erreur de connexion (${error.status}: ${error.statusText || 'Serveur injoignable'})`;
             }
         });
     }

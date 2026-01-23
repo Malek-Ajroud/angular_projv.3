@@ -6,6 +6,7 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
+import { ContextService } from './context.service';
 
 export interface ChatMessage {
     text: string;
@@ -38,9 +39,19 @@ RÈGLES DE RÉPONSE :
         { role: 'system', content: this.SYSTEM_PROMPT }
     ];
 
-    constructor(private http: HttpClient) { }
+    constructor(
+        private http: HttpClient,
+        private contextService: ContextService
+    ) { }
 
     sendMessageStream(userMessage: string): Observable<string> {
+        // Enforce context if available and not already added
+        const analysisJson = this.contextService.getAnalysisJSON();
+        if (analysisJson && this.conversationHistory.length === 1) {
+            const contextPrompt = `\n\nPROFIL ENFANT ANALYSÉ (JSON):\n${analysisJson}\n\nUtilise ce profil pour personnaliser tes conseils et recommander des documents pédagogiques adaptés.`;
+            this.conversationHistory[0].content = this.SYSTEM_PROMPT + contextPrompt;
+        }
+
         // Add user message to conversation history
         this.conversationHistory.push({
             role: 'user',

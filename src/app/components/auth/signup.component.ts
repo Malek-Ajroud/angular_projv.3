@@ -16,6 +16,7 @@ export class SignupComponent {
     email = '';
     password = '';
     confirmPassword = '';
+    phone = '';
     errorMessage = '';
     errors: any = {};
     isLoading = false;
@@ -54,11 +55,11 @@ export class SignupComponent {
 
         this.isLoading = true;
 
-        this.authService.signup(this.name, this.email, this.password).subscribe({
+        this.authService.signup(this.name, this.email, this.password, this.phone).subscribe({
             next: (response) => {
                 this.isLoading = false;
                 if (response.success) {
-                    this.router.navigate(['/chat']);
+                    this.router.navigate(['/accueil']);
                 }
             },
             error: (error) => {

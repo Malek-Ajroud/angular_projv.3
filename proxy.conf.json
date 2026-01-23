@@ -9,11 +9,11 @@
         "logLevel": "debug"
     },
     "/api/php": {
-        "target": "http://127.0.0.1/backend",
+        "target": "http://127.0.0.1",
         "secure": false,
         "changeOrigin": true,
         "pathRewrite": {
-            "^/api/php": "/api"
+            "^/api/php": "/backend/api"
         },
         "logLevel": "debug"
     }

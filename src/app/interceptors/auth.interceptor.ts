@@ -14,7 +14,7 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
 
     // Only add token to PHP API requests, not Ollama requests
     // We check for the PHP_API_URL part
-    if (token && req.url.includes('/api/php/')) {
+    if (token && (req.url.includes('/api/php/') || req.url.includes('/backend/api/'))) {
         const cloned = req.clone({
             setHeaders: {
                 Authorization: `Bearer ${token}`

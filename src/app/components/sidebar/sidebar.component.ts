@@ -22,6 +22,10 @@ export class SidebarComponent {
         private router: Router
     ) { }
 
+    isAdmin(): boolean {
+        return this.authService.isAdmin();
+    }
+
     logout(): void {
         this.authService.logout();
         this.router.navigate(['/login']);

@@ -13,59 +13,83 @@
     </div>
 </div>
 
-<ul class="nav-links">
-    <!-- Temporarily hidden menu items -->
-    <!--
-    <li class="nav-item">
-        <a routerLink="/ajouter-enfant" routerLinkActive="active" class="btn-soft-pink">
-            <i class="fa fa-plus-circle"></i> Ajouter un enfant
-        </a>
-    </li>
+<!-- Nav Container -->
+<div class="nav-container">
+    <ul class="nav-links">
+        <!-- Parent-specific links - Hidden for admins -->
+        <li class="nav-item" *ngIf="!isAdmin()">
+            <a routerLink="/questionnaire" routerLinkActive="active" class="btn-soft-purple">
+                <i class="fa fa-clipboard-list"></i> Questionnaire
+            </a>
+        </li>
 
-    <li class="nav-item">
-        <a routerLink="/gerer-compte" routerLinkActive="active" class="btn-soft-blue">
-            <i class="fa fa-user-cog"></i> Gérer mon compte
-        </a>
-    </li>
-    <li class="nav-item">
-        <a routerLink="/accueil" routerLinkActive="active">
-            <i class="fa fa-home"></i> Accueil
-        </a>
-    </li>
-    <li class="nav-item">
-        <a routerLink="/mes-enfants" routerLinkActive="active">
-            <i class="fa fa-child"></i> Mes Enfants
-        </a>
-    </li>
+        <li class="nav-item" *ngIf="!isAdmin()">
+            <a routerLink="/ajouter-enfant" routerLinkActive="active" class="btn-soft-pink">
+                <i class="fa fa-plus-circle"></i> Ajouter un enfant
+            </a>
+        </li>
 
-    <li class="nav-item">
-        <a routerLink="/calendrier" routerLinkActive="active">
-            <i class="fa fa-calendar"></i> Calendrier
-        </a>
-    </li>
-    <li class="nav-item">
-        <a routerLink="/conseils" routerLinkActive="active">
-            <i class="fa fa-lightbulb"></i> Conseils & Astuces
-        </a>
-    </li>
-    -->
+        <li class="nav-item" *ngIf="!isAdmin()">
+            <a routerLink="/gerer-compte" routerLinkActive="active" class="btn-soft-blue">
+                <i class="fa fa-user-cog"></i> Gérer mon compte
+            </a>
+        </li>
 
-    <!-- Only showing Assistant AI for now -->
-    <li class="nav-item">
-        <a routerLink="/chat" routerLinkActive="active">
-            <i class="fa fa-robot"></i>
-            <span class="link-text">Assistant AI</span>
-        </a>
-    </li>
+        <!-- Common links for all users -->
+        <li class="nav-item" *ngIf="!isAdmin()">
+            <a routerLink="/accueil" routerLinkActive="active">
+                <i class="fa fa-home"></i> Accueil
+            </a>
+        </li>
 
-    <li class="nav-item logout-item" *ngIf="currentUser$ | async">
-        <a href="javascript:void(0)" (click)="logout()">
-            <i class="fa fa-sign-out-alt"></i>
-            <span class="link-text">Déconnexion</span>
-        </a>
-    </li>
-</ul>
+        <li class="nav-item" *ngIf="!isAdmin()">
+            <a routerLink="/mes-enfants" routerLinkActive="active">
+                <i class="fa fa-child"></i> Mes Enfants
+            </a>
+        </li>
+
+        <li class="nav-item" *ngIf="!isAdmin()">
+            <a routerLink="/calendrier" routerLinkActive="active">
+                <i class="fa fa-calendar"></i> Calendrier
+            </a>
+        </li>
+
+        <li class="nav-item">
+            <a routerLink="/conseils" routerLinkActive="active">
+                <i class="fa fa-lightbulb"></i> Conseils & Astuces
+            </a>
+        </li>
+
+        <!-- Admin Specific Links -->
+        <ng-container *ngIf="isAdmin()">
+            <li class="nav-item">
+                <a routerLink="/admin" routerLinkActive="active">
+                    <i class="fa fa-tachometer-alt"></i>
+                    <span class="link-text">Tableau de Bord</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a routerLink="/admin/users" routerLinkActive="active">
+                    <i class="fa fa-users"></i>
+                    <span class="link-text">Utilisateurs</span>
+                </a>
+            </li>
+        </ng-container>
+
+        <!-- Standard User Links -->
+        <li class="nav-item" *ngIf="!isAdmin()">
+            <a routerLink="/chat" routerLinkActive="active">
+                <i class="fa fa-robot"></i>
+                <span class="link-text">Assistant AI</span>
+            </a>
+        </li>
+    </ul>
+</div>
 
 <div class="sidebar-footer">
+    <button *ngIf="currentUser$ | async" (click)="logout()" class="btn-logout-bottom">
+        <i class="fa fa-sign-out-alt"></i>
+        <span>Déconnexion</span>
+    </button>
     <p>&copy; 2026 Mon Espace Parent</p>
 </div>

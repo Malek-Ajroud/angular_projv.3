@@ -1,12 +1,16 @@
 <?php
 /**
- * PURPOSE: Registers new users and hashes passwords.
- * CONTENT: Endpoint to create a new user account in the database.
- */
-/**
  * Signup API Endpoint
- * POST /api/auth/signup
  */
+
+// Prevent PHP from outputting errors as HTML/Text
+error_reporting(0);
+ini_set('display_errors', 0);
+
+// Clear any previous output (whitespace, notices)
+if (ob_get_length())
+    ob_clean();
+ob_start();
 
 require_once __DIR__ . '/../../config/cors.php';
 require_once __DIR__ . '/../../models/User.php';
@@ -49,7 +53,9 @@ $userModel = new User();
 $user = $userModel->create(
     $input['name'],
     $input['email'],
-    $input['password']
+    $input['password'],
+    'user',
+    $input['phone'] ?? null
 );
 
 if (!$user) {
@@ -67,4 +73,3 @@ Response::success([
     'token' => $token,
     'user' => $userModel->sanitize($user)
 ], 'Compte créé avec succès', 201);
-?>

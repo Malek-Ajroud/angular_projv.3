@@ -60,6 +60,9 @@
         },
         "serve": {
           "builder": "@angular-devkit/build-angular:dev-server",
+          "options": {
+            "proxyConfig": "proxy.conf.json"
+          },
           "configurations": {
             "production": {
               "buildTarget": "mon-espace-parent:build:production"
@@ -96,11 +99,8 @@
         }
       }
     }
-<<<<<<< HEAD
   },
   "cli": {
     "analytics": false
-=======
->>>>>>> 5141a406c55cd6cf5e56d3cfa4a2ca61857311d3
   }
 }

@@ -2,7 +2,8 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { AccountService, User } from '../../services/account.service';
+import { AccountService } from '../../services/account.service';
+import { User } from '../../models/app.models';
 
 @Component({
     selector: 'app-gerer-compte',
@@ -35,6 +36,20 @@ export class GererCompteComponent implements OnInit {
 
     updateAccount(form: any): void {
         if (form.valid) {
+            // Validate password if provided
+            if (this.user.newPassword) {
+                if (this.user.newPassword.length < 6) {
+                    this.message.text = 'Le nouveau mot de passe doit contenir au moins 6 caractères.';
+                    this.message.type = 'error';
+                    return;
+                }
+                if (this.user.newPassword !== this.user.confirmPassword) {
+                    this.message.text = 'Les mots de passe ne correspondent pas.';
+                    this.message.type = 'error';
+                    return;
+                }
+            }
+
             this.saving = true;
             this.message.text = '';
 
@@ -43,23 +58,18 @@ export class GererCompteComponent implements OnInit {
                     this.saving = false;
                     this.message.text = 'Modifications enregistrées avec succès.';
                     this.message.type = 'success';
+                    // Reset password fields
+                    this.user.newPassword = '';
+                    this.user.confirmPassword = '';
                 },
-                error: () => {
+                error: (error) => {
                     this.saving = false;
-                    this.message.text = 'Erreur lors de la sauvegarde.';
+                    this.message.text = error.error?.message || 'Erreur lors de la sauvegarde.';
                     this.message.type = 'error';
                 }
             });
         }
     }
 
-    deleteAccount(): void {
-        if (confirm('Êtes-vous sûr de vouloir supprimer votre compte ? Cette action est irréversible.')) {
-            this.deleting = true;
-            this.accountService.deleteAccount().subscribe(() => {
-                alert('Votre compte a été supprimé.');
-                this.router.navigate(['/']);
-            });
-        }
-    }
+    // deleteAccount() is disabled as per user request
 }

@@ -87,12 +87,18 @@ class JWT
     public static function getTokenFromHeader()
     {
         $headers = getallheaders();
+        $authHeader = null;
 
         if (isset($headers['Authorization'])) {
             $authHeader = $headers['Authorization'];
-            if (preg_match('/Bearer\s+(.*)$/i', $authHeader, $matches)) {
-                return $matches[1];
-            }
+        } elseif (isset($_SERVER['HTTP_AUTHORIZATION'])) {
+            $authHeader = $_SERVER['HTTP_AUTHORIZATION'];
+        } elseif (isset($_SERVER['REDIRECT_HTTP_AUTHORIZATION'])) {
+            $authHeader = $_SERVER['REDIRECT_HTTP_AUTHORIZATION'];
+        }
+
+        if ($authHeader && preg_match('/Bearer\s+(.*)$/i', $authHeader, $matches)) {
+            return $matches[1];
         }
 
         return null;
@@ -129,4 +135,3 @@ class JWT
         return base64_decode(strtr($data, '-_', '+/'));
     }
 }
-?>

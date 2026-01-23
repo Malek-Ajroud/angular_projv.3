@@ -1,98 +1,63 @@
 import { Injectable } from '@angular/core';
-import { Observable, of, throwError } from 'rxjs';
-import { delay } from 'rxjs/operators';
-
-export interface Child {
-    id: string;
-    firstName: string;
-    birthDate: Date;
-    gender: 'boy' | 'girl';
-}
+import { HttpClient } from '@angular/common/http';
+import { Observable, map } from 'rxjs';
+import { environment } from '../../environments/environment';
+import { Child } from '../models/app.models';
 
 @Injectable({
     providedIn: 'root'
 })
 export class ChildService {
-    private children: Child[] = [
-        {
-            id: '1',
-            firstName: 'Léo',
-            birthDate: new Date('2018-05-15'),
-            gender: 'boy'
-        },
-        {
-            id: '2',
-            firstName: 'Emma',
-            birthDate: new Date('2020-08-22'),
-            gender: 'girl'
-        }
-    ];
+    private apiUrl = `${environment.PHP_API_URL}/children.php`;
+
+    constructor(private http: HttpClient) { }
 
     getChildren(): Observable<Child[]> {
-        // Return a copy to mimic API separation
-        return of([...this.children]).pipe(delay(500));
+        return this.http.get<any>(this.apiUrl).pipe(
+            map(response => {
+                if (!response.success) return [];
+                return response.data.map((item: any) => ({
+                    id: item.id,
+                    firstName: item.first_name,
+                    lastName: item.last_name,
+                    birthDate: item.birth_date,
+                    gender: item.gender,
+                    schoolYear: item.school_year,
+                    schoolName: item.school_name,
+                    address: item.address
+                }));
+            })
+        );
     }
 
-    getChild(id: string): Observable<Child> {
-        return new Observable(observer => {
-            setTimeout(() => {
-                const child = this.children.find(c => c.id === id);
-                if (child) {
-                    observer.next({ ...child });
-                    observer.complete();
-                } else {
-                    observer.error('Enfant non trouvé');
-                }
-            }, 300);
-        });
-    }
-
-    addChild(child: Omit<Child, 'id'>): Observable<Child> {
-        return new Observable(observer => {
-            setTimeout(() => {
-                const newChild: Child = {
-                    ...child,
-                    id: Date.now().toString(),
-                    birthDate: new Date(child.birthDate)
+    getChild(id: string): Observable<Child | null> {
+        return this.http.get<any>(`${this.apiUrl}?id=${id}`).pipe(
+            map(response => {
+                if (!response.success) return null;
+                const item = response.data;
+                return {
+                    id: item.id,
+                    firstName: item.first_name,
+                    lastName: item.last_name,
+                    birthDate: item.birth_date,
+                    gender: item.gender,
+                    schoolYear: item.school_year,
+                    schoolName: item.school_name,
+                    address: item.address
                 };
-                this.children.push(newChild);
-                observer.next(newChild);
-                observer.complete();
-            }, 600);
-        });
+            })
+        );
     }
 
-    updateChild(child: Child): Observable<Child> {
-        return new Observable(observer => {
-            setTimeout(() => {
-                const index = this.children.findIndex(c => c.id === child.id);
-                if (index !== -1) {
-                    const updatedChild = {
-                        ...child,
-                        birthDate: new Date(child.birthDate)
-                    };
-                    this.children[index] = updatedChild;
-                    observer.next(updatedChild);
-                    observer.complete();
-                } else {
-                    observer.error('Enfant non trouvé');
-                }
-            }, 600);
-        });
+    addChild(child: Omit<Child, 'id'>): Observable<any> {
+        return this.http.post<any>(this.apiUrl, child);
     }
 
-    deleteChild(id: string): Observable<void> {
-        return new Observable(observer => {
-            setTimeout(() => {
-                const index = this.children.findIndex(c => c.id === id);
-                if (index !== -1) {
-                    this.children.splice(index, 1);
-                    observer.next();
-                    observer.complete();
-                } else {
-                    observer.error('Enfant non trouvé');
-                }
-            }, 400);
-        });
+    updateChild(child: Child): Observable<any> {
+        return this.http.put<any>(`${this.apiUrl}?id=${child.id}`, child);
+    }
+
+    deleteChild(id: string): Observable<any> {
+        return this.http.delete<any>(`${this.apiUrl}?id=${id}`);
     }
 }

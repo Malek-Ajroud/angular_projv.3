@@ -7,22 +7,7 @@ import { isPlatformBrowser } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject, Observable, tap, of } from 'rxjs';
 import { environment } from '../../environments/environment';
-
-export interface User {
-    id: number;
-    name: string;
-    email: string;
-    created_at: string;
-}
-
-export interface AuthResponse {
-    success: boolean;
-    message: string;
-    data: {
-        token: string;
-        user: User;
-    };
-}
+import { User, AuthResponse } from '../models/app.models';
 
 @Injectable({
     providedIn: 'root'
@@ -68,11 +53,12 @@ export class AuthService {
     /**
      * Signup new user
      */
-    signup(name: string, email: string, password: string): Observable<AuthResponse> {
+    signup(name: string, email: string, password: string, phone: string = ''): Observable<AuthResponse> {
         return this.http.post<AuthResponse>(`${this.apiUrl}/auth/signup.php`, {
             name,
             email,
-            password
+            password,
+            phone
         }).pipe(
             tap(response => {
                 if (response.success) {
@@ -148,5 +134,13 @@ export class AuthService {
      */
     getCurrentUser(): User | null {
         return this.currentUserSubject.value;
+    }
+
+    /**
+     * Check if current user is admin
+     */
+    isAdmin(): boolean {
+        const user = this.getCurrentUser();
+        return user?.role === 'admin';
     }
 }

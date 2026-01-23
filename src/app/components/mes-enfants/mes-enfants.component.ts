@@ -5,7 +5,8 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
-import { ChildService, Child } from '../../services/child.service';
+import { ChildService } from '../../services/child.service';
+import { Child } from '../../models/app.models';
 
 @Component({
     selector: 'app-mes-enfants',

@@ -127,5 +127,12 @@ class Conversation
 
         $stmt->execute(['id' => $id]);
     }
+    /**
+     * Get total count of conversations
+     */
+    public function getTotalCount()
+    {
+        return (int) $this->db->query("SELECT COUNT(*) FROM chat_conversations")->fetchColumn();
+    }
 }
 ?>

@@ -6,7 +6,8 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, ActivatedRoute } from '@angular/router';
-import { ChildService, Child } from '../../services/child.service';
+import { ChildService } from '../../services/child.service';
+import { Child } from '../../models/app.models';
 
 @Component({
     selector: 'app-ajouter-enfant',
@@ -18,7 +19,7 @@ import { ChildService, Child } from '../../services/child.service';
 export class AjouterEnfantComponent implements OnInit {
     // Using partial because for new child ID is not present initially
     child: any = {
-        gender: 'boy'
+        gender: 'garçon'
     };
     isSubmitting = false;
     successMessage = '';
@@ -92,8 +93,12 @@ export class AjouterEnfantComponent implements OnInit {
                     }, 1500);
                 },
                 error: (err) => {
-                    console.error("Erreur:", err);
+                    console.error("Erreur complète:", err);
+                    console.error("Status:", err.status);
+                    console.error("Message:", err.message);
+                    console.error("Error body:", err.error);
                     this.isSubmitting = false;
+                    alert(`Erreur lors de l'ajout: ${err.error?.message || err.message || 'Erreur inconnue'}`);
                 }
             });
         }

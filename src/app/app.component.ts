@@ -2,7 +2,7 @@ import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterOutlet } from '@angular/router';
 import { SidebarComponent } from './components/sidebar/sidebar.component';
-import { HttpClient } from '@angular/common/http';
+import { AuthService } from './services/auth.service';
 
 @Component({
   selector: 'app-root',
@@ -13,6 +13,9 @@ import { HttpClient } from '@angular/common/http';
 })
 export class AppComponent {
   mobileMenuOpen = false;
+  currentUser$ = this.authService.currentUser$;
+
+  constructor(private authService: AuthService) { }
 
   toggleMobileMenu(): void {
     this.mobileMenuOpen = !this.mobileMenuOpen;
