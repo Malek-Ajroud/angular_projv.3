@@ -30,6 +30,11 @@ export class ContextService {
         return this.childProfileSubject.value;
     }
 
+    hasData(): boolean {
+        const profile = this.getChildProfile();
+        return profile && Object.keys(profile).length > 0;
+    }
+
     private filterEmptyFields(obj: any): any {
         if (typeof obj !== 'object' || obj === null) {
             return obj;

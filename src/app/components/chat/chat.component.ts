@@ -81,6 +81,13 @@ export class ChatComponent implements OnInit, AfterViewChecked {
                         sender: m.role === 'user' ? 'user' : 'ai',
                         timestamp: new Date(m.timestamp)
                     }));
+
+                    // Synchroniser l'historique avec le service AI pour conserver le contexte
+                    const history = res.data.map((m: any) => ({
+                        role: m.role === 'user' ? 'user' : 'assistant',
+                        content: m.content
+                    }));
+                    this.aiChatService.setHistory(history);
                 }
                 this.isTyping = false;
                 this.shouldScroll = true;

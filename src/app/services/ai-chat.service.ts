@@ -22,18 +22,16 @@ export class AiChatService {
     private apiUrl = environment.OLLAMA_API_URL;
 
     // System prompt to constrain the AI to educational and nutrition topics
-    private readonly SYSTEM_PROMPT = `Tu es un assistant parental virtuel STRICTEMENT limité aux domaines de l'ÉDUCATION et de la NUTRITION des enfants.
+    private readonly SYSTEM_PROMPT = `Tu es un assistant parental virtuel expert en ÉDUCATION et NUTRITION des enfants.
 
-INTERDICTIONS ABSOLUES :
-- Interdiction de répondre à des questions de culture générale, politique, sport, divertissement, technologie (hors éducation), ou tout autre sujet hors thématique.
-- Interdiction de générer du code informatique, des poèmes (hors contexte éducatif enfantin), ou des analyses complexes de sujets non parentaux.
-- Interdiction d'aider pour des tâches non liées à l'enfance.
+CONTEXTE PRIORITAIRE :
+Si un "PROFIL ENFANT ANALYSÉ" t'est fourni en format JSON, ce profil devient ta source d'information principale. Toute question portant sur les résultats, les difficultés, le comportement ou le niveau scolaire de cet enfant est DIRECTEMENT liée à ta mission d'éducation.
 
 RÈGLES DE RÉPONSE :
-1. Si la question concerne l'éducation (devoirs, développement, comportement) ou la nutrition (recettes, santé, allergies) infantiles : Réponds de manière bienveillante et pratique.
-2. SI LA QUESTION EST HORS SUJET : Tu DOIS refuser systématiquement de répondre. Ta réponse unique doit être : "Je suis un assistant spécialisé uniquement dans l'éducation et la nutrition des enfants. Je ne peux pas répondre à cette demande. Avez-vous une question concernant le développement ou l'alimentation de votre enfant ?"
-3. Ne justifie pas ton refus au-delà de la phrase imposée.
-4. Reste professionnel, court (si nécessaire pour le refus) et en français.`;
+1. Analyse le JSON fourni pour identifier les forces et les besoins de l'enfant.
+2. Si le parent pose une question sur son enfant (ex: "quelles sont ses difficultés ?"), utilise les données du JSON (notes basses, observations) pour répondre de manière précise et bienveillante.
+3. Continue de refuser les sujets totalement hors thématique (politique, sport, divertissement, technologie hors éducation) avec la phrase : "Je suis un assistant spécialisé uniquement dans l'éducation et la nutrition des enfants. Je ne peux pas répondre à cette demande. Avez-vous une question concernant le développement ou l'alimentation de votre enfant ?"
+4. Reste professionnel, empathique et constructif.`;
 
     private conversationHistory: Array<{ role: string; content: string }> = [
         { role: 'system', content: this.SYSTEM_PROMPT }
@@ -45,11 +43,14 @@ RÈGLES DE RÉPONSE :
     ) { }
 
     sendMessageStream(userMessage: string): Observable<string> {
-        // Enforce context if available and not already added
-        const analysisJson = this.contextService.getAnalysisJSON();
-        if (analysisJson && this.conversationHistory.length === 1) {
-            const contextPrompt = `\n\nPROFIL ENFANT ANALYSÉ (JSON):\n${analysisJson}\n\nUtilise ce profil pour personnaliser tes conseils et recommander des documents pédagogiques adaptés.`;
+        // Enforce context if available (always sync the system prompt with latest data)
+        const analysisJson = this.contextService.hasData() ? this.contextService.getAnalysisJSON() : null;
+        const contextPrompt = analysisJson ? `\n\nPROFIL ENFANT ANALYSÉ (JSON):\n${analysisJson}\n\nUtilise ce profil pour personnaliser tes conseils et recommander des documents pédagogiques adaptés.` : '';
+
+        if (this.conversationHistory.length > 0 && this.conversationHistory[0].role === 'system') {
             this.conversationHistory[0].content = this.SYSTEM_PROMPT + contextPrompt;
+        } else if (this.conversationHistory.length === 0) {
+            this.conversationHistory.push({ role: 'system', content: this.SYSTEM_PROMPT + contextPrompt });
         }
 
         // Add user message to conversation history
@@ -122,9 +123,22 @@ RÈGLES DE RÉPONSE :
         });
     }
 
-    clearHistory(): void {
+    setHistory(messages: Array<{ role: string; content: string }>): void {
+        const analysisJson = this.contextService.hasData() ? this.contextService.getAnalysisJSON() : null;
+        const contextPrompt = analysisJson ? `\n\nPROFIL ENFANT ANALYSÉ (JSON):\n${analysisJson}\n\nUtilise ce profil pour personnaliser tes conseils et recommander des documents pédagogiques adaptés.` : '';
+
         this.conversationHistory = [
-            { role: 'system', content: this.SYSTEM_PROMPT }
+            { role: 'system', content: this.SYSTEM_PROMPT + contextPrompt },
+            ...messages
+        ];
+    }
+
+    clearHistory(): void {
+        const analysisJson = this.contextService.hasData() ? this.contextService.getAnalysisJSON() : null;
+        const contextPrompt = analysisJson ? `\n\nPROFIL ENFANT ANALYSÉ (JSON):\n${analysisJson}\n\nUtilise ce profil pour personnaliser tes conseils et recommander des documents pédagogiques adaptés.` : '';
+
+        this.conversationHistory = [
+            { role: 'system', content: this.SYSTEM_PROMPT + contextPrompt }
         ];
     }
 }
