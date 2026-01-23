@@ -11,9 +11,14 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
     console.log('Request URL:', req.url);
     console.log('Token exists:', !!token);
 
-    // Only add token to PHP API requests
-    // We check for the PHP_API_URL part (permissive check)
-    if (token && (req.url.includes('/api/php') || req.url.includes('/backend/api'))) {
+    // Only add token to PHP API requests and External API via Proxy
+    // We check for the PHP_API_URL and Proxy paths
+    if (token && (
+        req.url.includes('/api/php') ||
+        req.url.includes('/backend/api') ||
+        req.url.includes('/api/external') ||
+        req.url.includes('/api/direct')
+    )) {
         console.log('Injecting headers for:', req.url);
         const cloned = req.clone({
             setHeaders: {

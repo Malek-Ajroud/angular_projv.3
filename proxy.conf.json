@@ -16,5 +16,23 @@
             "^/api/php": "/api"
         },
         "logLevel": "debug"
+    },
+    "/api/external": {
+        "target": "https://mon-compte.rafi9ni.pro",
+        "secure": false,
+        "changeOrigin": true,
+        "pathRewrite": {
+            "^/api/external": "/api/external"
+        },
+        "logLevel": "debug"
+    },
+    "/api/direct": {
+        "target": "https://mon-compte.rafi9ni.pro",
+        "secure": false,
+        "changeOrigin": true,
+        "pathRewrite": {
+            "^/api/direct": ""
+        },
+        "logLevel": "debug"
     }
 }

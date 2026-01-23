@@ -3,10 +3,11 @@
  * CONTENT: Sends messages to Ollama, manages system prompts (educational/nutrition focus), and handles streaming responses.
  */
 import { HttpClient } from '@angular/common/http';
-import { Injectable } from '@angular/core';
+import { Injectable, NgZone } from '@angular/core';
 import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { AuthService } from './auth.service';
+import { ContextService, ChildProfile } from './context.service';
 
 export interface ChatMessage {
     text: string;
@@ -20,20 +21,24 @@ export interface ChatMessage {
 export class AiChatService {
 
     private apiUrl = environment.OLLAMA_API_URL;
+    private currentProfile: ChildProfile | null = null;
+    private homeworkContext: any = null;
 
     // System prompt to constrain the AI to educational and nutrition topics
-    private readonly SYSTEM_PROMPT = `Tu es un assistant parental virtuel STRICTEMENT limité aux domaines de l'ÉDUCATION et de la NUTRITION des enfants.
+    private readonly SYSTEM_PROMPT = `Tu es un assistant parental virtuel spécialisé en ÉDUCATION et NUTRITION.
+Ton but est d'aider les parents avec des conseils pratiques, bienveillants et personnalisés.
 
-INTERDICTIONS ABSOLUES :
-- Interdiction de répondre à des questions de culture générale, politique, sport, divertissement, technologie (hors éducation), ou tout autre sujet hors thématique.
-- Interdiction de générer du code informatique, des poèmes (hors contexte éducatif enfantin), ou des analyses complexes de sujets non parentaux.
-- Interdiction d'aider pour des tâches non liées à l'enfance.
+DOMAINES AUTORISÉS :
+1. ÉDUCATION : Devoirs, difficultés scolaires, comportement, développement de l'enfant, activités éducatives.
+2. NUTRITION : Recettes pour enfants, équilibre alimentaire, santé, allergies.
+3. CONTEXTE ENFANT : Tu dois impérativement utiliser les informations du "CONTEXTE ENFANT ACTUEL" et des "RESSOURCES PÉDAGOGIQUES" fournies ci-dessous. 
 
-RÈGLES DE RÉPONSE :
-1. Si la question concerne l'éducation (devoirs, développement, comportement) ou la nutrition (recettes, santé, allergies) infantiles : Réponds de manière bienveillante et pratique.
-2. SI LA QUESTION EST HORS SUJET : Tu DOIS refuser systématiquement de répondre. Ta réponse unique doit être : "Je suis un assistant spécialisé uniquement dans l'éducation et la nutrition des enfants. Je ne peux pas répondre à cette demande. Avez-vous une question concernant le développement ou l'alimentation de votre enfant ?"
-3. Ne justifie pas ton refus au-delà de la phrase imposée.
-4. Reste professionnel, court (si nécessaire pour le refus) et en français.`;
+RÈGLES CRITIQUES :
+- Si la section "RESSOURCES PÉDAGOGIQUES" contient des informations, tu DOIS les inclure dans ton résumé.
+- Ne dis jamais que tu n'as pas trouvé de ressources si des données sont présentes.
+- Cite le titre exact du document et propose les liens de téléchargement.
+- Adapte tes recommandations en fonction du niveau de l'enfant (CE2) et du contenu du document.
+- Réponds en français.`;
 
     private conversationHistory: Array<{ role: string; content: string }> = [
         { role: 'system', content: this.SYSTEM_PROMPT }
@@ -41,13 +46,70 @@ RÈGLES DE RÉPONSE :
 
     constructor(
         private http: HttpClient,
-        private authService: AuthService
+        private authService: AuthService,
+        private contextService: ContextService,
+        private ngZone: NgZone
     ) {
         this.authService.currentUser$.subscribe(user => {
             if (!user) {
                 this.clearHistory();
             }
         });
+
+        this.contextService.childProfile$.subscribe(profile => {
+            this.currentProfile = profile;
+            this.updateSystemPromptWithProfile();
+        });
+    }
+
+    setHomeworkContext(homeworkData: any): void {
+        this.homeworkContext = homeworkData;
+        this.updateSystemPromptWithProfile();
+    }
+
+    private getSystemPromptWithProfile(): string {
+        let fullPrompt = this.SYSTEM_PROMPT;
+
+        if (this.currentProfile) {
+            fullPrompt += `
+
+CONTEXTE ENFANT ACTUEL :
+- Niveau scolaire : ${this.currentProfile.niveauScolaire}
+- Difficultés : ${this.currentProfile.matieresEnDifficulte}
+- Points d'attention : ${this.currentProfile.pointsAAmeliorer}`;
+        }
+
+        if (this.homeworkContext) {
+            // Extraction selon la structure réelle : { homeWork: { name: "...", homeworkfiles: { fileEducanet: [...] } } }
+            const hw = this.homeworkContext.homeWork || this.homeworkContext;
+            const cleanResources = {
+                titre: hw.name || hw.titre || 'Ressource pédagogique',
+                fichiers: (hw.homeworkfiles?.fileEducanet || []).map((f: any) => ({
+                    nom: f.title || f.fileName,
+                    lien: f.path
+                }))
+            };
+
+            fullPrompt += `
+
+RESSOURCES PÉDAGOGIQUES TROUVÉES (API) :
+${JSON.stringify(cleanResources, null, 2)}
+
+INSTRUCTION CRITIQUE : Ne fais PAS de long résumé. Donne juste le titre du document et le(s) lien(s) de téléchargement PDF de manière professionnelle.`;
+        }
+
+        fullPrompt += `\n\nUtilise impérativement ces informations pour tes conseils.`;
+
+        return fullPrompt;
+    }
+
+    private updateSystemPromptWithProfile(): void {
+        const fullPrompt = this.getSystemPromptWithProfile();
+        console.log('AiChatService: Système Prompt mis à jour avec le contexte:', fullPrompt);
+        // Update system prompt in history if it exists as the first message
+        if (this.conversationHistory.length > 0 && this.conversationHistory[0].role === 'system') {
+            this.conversationHistory[0].content = fullPrompt;
+        }
     }
 
     sendMessageStream(userMessage: string): Observable<string> {
@@ -59,17 +121,17 @@ RÈGLES DE RÉPONSE :
 
         return new Observable(observer => {
             const body = {
-                model: 'gemma3:8b',
+                model: 'llama3.2:latest',
                 messages: this.conversationHistory,
                 stream: true,
                 options: {
-                    temperature: 0.3,
-                    top_p: 0.85,
-                    num_ctx: 128000,
-                    num_predict: 1000
-                },
-                keep_alive: "1h"
+                    temperature: 0.7,
+                    num_ctx: 4096
+                }
             };
+
+            console.log('AiChatService: Envoi requête à Ollama (llama3.2)...');
+            console.dir(body.messages);
 
             fetch(this.apiUrl, {
                 method: 'POST',
@@ -78,9 +140,11 @@ RÈGLES DE RÉPONSE :
                 },
                 body: JSON.stringify(body)
             })
-                .then(response => {
+                .then(async response => {
+                    console.log('AiChatService: Réponse reçue de Ollama, status:', response.status);
                     if (!response.ok) {
-                        throw new Error('Network response was not ok');
+                        const text = await response.text();
+                        throw new Error(`Ollama error (${response.status}): ${text}`);
                     }
 
                     const reader = response.body?.getReader();
@@ -95,7 +159,7 @@ RÈGLES DE RÉPONSE :
                                 if (buffer.trim()) {
                                     this.processJsonLines(buffer, (content) => {
                                         fullResponse += content;
-                                        observer.next(content);
+                                        this.ngZone.run(() => observer.next(content));
                                     });
                                 }
 
@@ -104,7 +168,8 @@ RÈGLES DE RÉPONSE :
                                     role: 'assistant',
                                     content: fullResponse
                                 });
-                                observer.complete();
+                                console.log('AiChatService: Flux terminé. Appel à observer.complete()');
+                                this.ngZone.run(() => observer.complete());
                                 return;
                             }
 
@@ -118,20 +183,20 @@ RÈGLES DE RÉPONSE :
 
                                 this.processJsonLines(linesToProcess, (content) => {
                                     fullResponse += content;
-                                    observer.next(content);
+                                    this.ngZone.run(() => observer.next(content));
                                 });
                             }
 
                             readChunk();
                         }).catch(error => {
-                            observer.error(error);
+                            this.ngZone.run(() => observer.error(error));
                         });
                     };
 
                     readChunk();
                 })
                 .catch(error => {
-                    observer.error(error);
+                    this.ngZone.run(() => observer.error(error));
                 });
         });
     }
@@ -141,8 +206,20 @@ RÈGLES DE RÉPONSE :
         for (const line of lines) {
             try {
                 const json = JSON.parse(line);
+                let content = '';
+
+                // standard chat content
                 if (json.message?.content) {
-                    onContent(json.message.content);
+                    content += json.message.content;
+                }
+
+                // reasoning/thought content if model supports it
+                if (json.message?.thought) {
+                    content += `[Pensée : ${json.message.thought}] `;
+                }
+
+                if (content) {
+                    onContent(content);
                 }
             } catch (e) {
                 // Skip invalid JSON lines (might be partial)
@@ -152,13 +229,13 @@ RÈGLES DE RÉPONSE :
 
     clearHistory(): void {
         this.conversationHistory = [
-            { role: 'system', content: this.SYSTEM_PROMPT }
+            { role: 'system', content: this.getSystemPromptWithProfile() }
         ];
     }
 
     setHistory(messages: Array<{ role: string; content: string }>): void {
         this.conversationHistory = [
-            { role: 'system', content: this.SYSTEM_PROMPT },
+            { role: 'system', content: this.getSystemPromptWithProfile() },
             ...messages
         ];
     }
