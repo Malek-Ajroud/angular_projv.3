@@ -45,9 +45,6 @@ export class UserManagementComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadUsers();
-    this.adminService.searchTerm$.subscribe((term: string) => {
-      this.searchTerm = term;
-    });
   }
 
   get filteredUsers(): User[] {

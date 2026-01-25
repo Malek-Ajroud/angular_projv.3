@@ -7,7 +7,6 @@ import { isPlatformBrowser } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject, Observable, tap, of } from 'rxjs';
 import { environment } from '../../environments/environment';
-<<<<<<< HEAD
 
 export interface User {
     id: number;
@@ -25,9 +24,6 @@ export interface AuthResponse {
         user: User;
     };
 }
-=======
-import { User, AuthResponse } from '../models/app.models';
->>>>>>> 2615bcd57fe52ad60051ca3ce24a575aa79ae919
 
 @Injectable({
     providedIn: 'root'
@@ -149,13 +145,6 @@ export class AuthService {
         return !!this.getToken();
     }
 
-    /**
-     * Check if user is admin
-     */
-    isAdmin(): boolean {
-        const user = this.currentUserSubject.value;
-        return user?.role === 'admin';
-    }
 
     /**
      * Get current user value

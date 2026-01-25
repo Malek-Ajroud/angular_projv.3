@@ -35,23 +35,14 @@ export class LoginComponent {
             next: (response) => {
                 this.isLoading = false;
                 if (response.success) {
-<<<<<<< HEAD
-                    const user = response.data.user;
-
-                    if (user.role === 'admin') {
-=======
                     console.log('Login success:', response);
                     if (this.authService.isAdmin()) {
->>>>>>> 2615bcd57fe52ad60051ca3ce24a575aa79ae919
                         this.router.navigate(['/admin']);
                     } else {
                         this.router.navigate(['/accueil']);
                     }
-<<<<<<< HEAD
-=======
                 } else {
                     this.errorMessage = response.message || 'Erreur de connexion';
->>>>>>> 2615bcd57fe52ad60051ca3ce24a575aa79ae919
                 }
             },
             error: (error) => {

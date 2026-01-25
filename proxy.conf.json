@@ -1,4 +1,6 @@
 {
+    
+
     "/api/chat": {
         "target": "http://127.0.0.1:11434",
         "secure": false,
@@ -13,7 +15,7 @@
         "secure": false,
         "changeOrigin": true,
         "pathRewrite": {
-            "^/api/php": "/backend/api"
+            "^/api/php": "/backend/php"
         },
         "logLevel": "debug"
     },

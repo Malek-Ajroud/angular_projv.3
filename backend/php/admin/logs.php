@@ -7,8 +7,8 @@
 
 require_once __DIR__ . '/../../config/cors.php';//Allows frontend (Angular) to call the API
 require_once __DIR__ . '/../../config/database.php';
-require_once __DIR__ . '/../../models/User.php';//User-related logic (DB access)
-require_once __DIR__ . '/../../utils/JWT.php';//Verifies the login token
+require_once __DIR__ . '/../../models/UserModel.php';//User-related logic (DB access)
+require_once __DIR__ . '/../../utils/JWTHandler.php';//Verifies the login token
 require_once __DIR__ . '/../../utils/Response.php';//Sends clean JSON responses
 
 // Verify Admin Token

@@ -5,7 +5,7 @@ import { SidebarComponent } from './components/sidebar/sidebar.component';
 import { ContextService } from './services/context.service';
 import { HomeworkService } from './services/homework.service';
 import { AiChatService } from './services/ai-chat.service';
-import { LibraryService } from './services/library.service';
+
 import { AuthService } from './services/auth.service';
 import { switchMap } from 'rxjs/operators';
 
@@ -24,8 +24,7 @@ export class AppComponent implements OnInit {
     private authService: AuthService,
     private contextService: ContextService,
     private homeworkService: HomeworkService,
-    private aiChatService: AiChatService,
-    private libraryService: LibraryService
+    private aiChatService: AiChatService
   ) { }
 
   ngOnInit(): void {
@@ -98,11 +97,7 @@ export class AppComponent implements OnInit {
               files: files,
               childProfile: profile
             };
-
-            this.libraryService.addEntry(entry);
-            console.log("AppComponent: Document ajouté à la bibliothèque:", title);
-          } else {
-            console.log("AppComponent: Aucun fichier PDF trouvé dans ce document.");
+            console.log("AppComponent: Fichiers trouvés:", files.length);
           }
 
           // Déclencher l'IA

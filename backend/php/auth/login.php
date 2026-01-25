@@ -1,10 +1,9 @@
 <?php
-<<<<<<< HEAD
-=======
+
 /**
  * Login API Endpoint
  */
->>>>>>> 2615bcd57fe52ad60051ca3ce24a575aa79ae919
+
 
 // Prevent PHP from outputting errors as HTML/Text
 error_reporting(0);
@@ -58,7 +57,7 @@ try {
     $userModel = new User();
     $user = $userModel->verify($input['email'], $input['password']);
 
-<<<<<<< HEAD
+
     if (!$user) {
         Response::error('Email ou mot de passe incorrect', 401);
     }
@@ -73,6 +72,13 @@ try {
     // Return success response
     $sanitizedUser = $userModel->sanitize($user);
 
+    // DEBUG LOGGING
+    $logFile = __DIR__ . '/debug_login.log';
+    $logEntry = "--- " . date('Y-m-d H:i:s') . " ---\n";
+    $logEntry .= "Sanitized User to be sent: " . print_r($sanitizedUser, true) . "\n";
+    $logEntry .= "Original User from DB: " . print_r($user, true) . "\n";
+    file_put_contents($logFile, $logEntry, FILE_APPEND);
+
     Response::success([
         'token' => $token,
         'user' => $sanitizedUser
@@ -83,33 +89,3 @@ try {
     Response::error('Une erreur inattendue est survenue : ' . $e->getMessage(), 500);
 }
 ?>
-=======
-if (!$user) {
-    // DEBUG: Temporary logging
-    file_put_contents('debug_login.txt', date('Y-m-d H:i:s') . " - Login failed for: " . $input['email'] . "\n", FILE_APPEND);
-    Response::error('Email ou mot de passe incorrect', 401);
-}
-
-// Generate JWT token
-$token = JWT::encode([
-    'user_id' => $user['id'],
-    'email' => $user['email'],
-    'role' => $user['role'] ?? 'user'
-]);
-
-// Return success response
-// Return success response
-$sanitizedUser = $userModel->sanitize($user);
-
-// DEBUG LOGGING
-$logFile = __DIR__ . '/debug_login.log';
-$logEntry = "--- " . date('Y-m-d H:i:s') . " ---\n";
-$logEntry .= "Sanitized User to be sent: " . print_r($sanitizedUser, true) . "\n";
-$logEntry .= "Original User from DB: " . print_r($user, true) . "\n";
-file_put_contents($logFile, $logEntry, FILE_APPEND);
-
-Response::success([
-    'token' => $token,
-    'user' => $sanitizedUser
-], 'Connexion réussie');
->>>>>>> 2615bcd57fe52ad60051ca3ce24a575aa79ae919

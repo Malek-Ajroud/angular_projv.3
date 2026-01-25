@@ -18,7 +18,7 @@ import { Child } from '../../models/app.models';
 })
 export class AjouterEnfantComponent implements OnInit {
 
-    child: any = {
+    child: Partial<Child> = {
         gender: 'garçon'
     };
     isSubmitting = false;
@@ -40,12 +40,16 @@ export class AjouterEnfantComponent implements OnInit {
                 next: (data) => {
                     this.child = data;
                     // Format date for input[type=date] which needs yyyy-MM-dd
-                    if (this.child.birth_date) {
-                        const d = new Date(this.child.birth_date);
+                    if (this.child.birthDate) {
+                        const d = new Date(this.child.birthDate);
                         const year = d.getFullYear();
                         const month = ('0' + (d.getMonth() + 1)).slice(-2);
                         const day = ('0' + d.getDate()).slice(-2);
-                        this.child.birth_date = `${year}-${month}-${day}`;
+                        // Typescript might complain about assigning string to Date, 
+                        // but for ngModel input[type=date] calls, it needs string yyyy-mm-dd.
+                        // However, we declared birthDate as Date.
+                        // Let's use 'as any' for this temporary assignment or handle it via a separate property.
+                        (this.child.birthDate as any) = `${year}-${month}-${day}`;
                     }
                 },
                 error: (err) => {
@@ -57,8 +61,8 @@ export class AjouterEnfantComponent implements OnInit {
     }
 
     validateDate(): void {
-        if (!this.child.birth_date) return;
-        const date = new Date(this.child.birth_date);
+        if (!this.child.birthDate) return;
+        const date = new Date(this.child.birthDate);
         const now = new Date();
         if (date > now) {
             this.futureDateError = true;

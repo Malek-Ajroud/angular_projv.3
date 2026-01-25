@@ -49,7 +49,6 @@ if (!empty($errors)) {
 }
 
 // Create user
-<<<<<<< HEAD
 try {
     $userModel = new User();
     $user = $userModel->create(
@@ -57,16 +56,6 @@ try {
         $input['email'],
         $input['password']
     );
-=======
-$userModel = new User();
-$user = $userModel->create(
-    $input['name'],
-    $input['email'],
-    $input['password'],
-    'user',
-    $input['phone'] ?? null
-);
->>>>>>> 2615bcd57fe52ad60051ca3ce24a575aa79ae919
 
     if (!$user) {
         Response::error('Cet email est déjà utilisé', 409);
@@ -88,19 +77,4 @@ $user = $userModel->create(
 } catch (Exception $e) {
     Response::error('Une erreur inattendue est survenue : ' . $e->getMessage(), 500);
 }
-<<<<<<< HEAD
 ?>
-=======
-
-// Generate JWT token
-$token = JWT::encode([
-    'user_id' => $user['id'],
-    'email' => $user['email']
-]);
-
-// Return success response
-Response::success([
-    'token' => $token,
-    'user' => $userModel->sanitize($user)
-], 'Compte créé avec succès', 201);
->>>>>>> 2615bcd57fe52ad60051ca3ce24a575aa79ae919

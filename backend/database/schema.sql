@@ -3,18 +3,12 @@ CREATE TABLE IF NOT EXISTS users (
     name VARCHAR(100) NOT NULL,
     email VARCHAR(255) UNIQUE NOT NULL,
     password_hash VARCHAR(255) NOT NULL,
-<<<<<<< HEAD
     role ENUM('user', 'admin') DEFAULT 'user',
-=======
     phone VARCHAR(20) NULL,
->>>>>>> 2615bcd57fe52ad60051ca3ce24a575aa79ae919
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    role ENUM('user', 'admin') NOT NULL DEFAULT 'user',
     INDEX idx_email (email)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-<<<<<<< HEAD
 
 CREATE TABLE IF NOT EXISTS children (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -28,11 +22,6 @@ CREATE TABLE IF NOT EXISTS children (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 
-=======
--- ============================================
--- Table: tips
--- Stores parentings tips and tricks
--- ============================================
 CREATE TABLE IF NOT EXISTS tips (
     id INT AUTO_INCREMENT PRIMARY KEY,
     category VARCHAR(50) NOT NULL,
@@ -44,10 +33,7 @@ CREATE TABLE IF NOT EXISTS tips (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- ============================================
--- Table: admin_logs
--- Stores administrative actions
--- ============================================
+
 CREATE TABLE IF NOT EXISTS admin_logs (
     id INT AUTO_INCREMENT PRIMARY KEY,
     admin_id INT NOT NULL,
@@ -71,7 +57,6 @@ CREATE TABLE IF NOT EXISTS admin_logs (
 -- Table: chat_conversations
 -- Stores chat conversation metadata
 -- ============================================
->>>>>>> 2615bcd57fe52ad60051ca3ce24a575aa79ae919
 CREATE TABLE IF NOT EXISTS chat_conversations (
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,
@@ -90,30 +75,8 @@ CREATE TABLE IF NOT EXISTS chat_messages (
     INDEX idx_conversation_id (conversation_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-<<<<<<< HEAD
-=======
 -- ============================================
--- Table: children
--- Stores child profiles for users
+-- Table: children (Extended Version)
 -- ============================================
-CREATE TABLE IF NOT EXISTS children (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    user_id INT NOT NULL,
-    first_name VARCHAR(100) NOT NULL,
-    last_name VARCHAR(100) NULL,
-    birth_date DATE NOT NULL,
-    gender VARCHAR(20) NOT NULL,
-    school_year VARCHAR(100) NULL,
-    school_name VARCHAR(255) NULL,
-    address TEXT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-    INDEX idx_user_id (user_id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
--- ============================================
--- Sample Data (Optional - for testing)
--- ============================================
->>>>>>> 2615bcd57fe52ad60051ca3ce24a575aa79ae919
+-- Already defined above but keeping for reference if needed
 

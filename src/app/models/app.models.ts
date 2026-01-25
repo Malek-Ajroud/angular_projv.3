@@ -3,7 +3,7 @@ export interface Child {
     firstName: string;
     lastName?: string;
     birthDate: Date;
-    gender: 'garçon' | 'fille';
+    gender: 'garçon' | 'fille' | 'other';
     schoolYear?: string;
     schoolName?: string;
     address?: string;

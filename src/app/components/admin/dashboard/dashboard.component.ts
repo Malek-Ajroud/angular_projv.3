@@ -1,22 +1,19 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
 import { RouterOutlet, RouterLink, RouterLinkActive } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { AuthService } from '../../../services/auth.service';
-import { AdminService } from '../../../services/admin.service';
 import { Router } from '@angular/router';
 import { environment } from '../../../../environments/environment';
 
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, RouterOutlet, RouterLink, RouterLinkActive, FormsModule],
+  imports: [CommonModule, RouterOutlet, RouterLink, RouterLinkActive],
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.css'
 })
 export class DashboardComponent implements OnInit {
-  searchTerm: string = '';
   stats = {
     users: 0,
     children: 0,
@@ -27,7 +24,6 @@ export class DashboardComponent implements OnInit {
   constructor(
     private authService: AuthService,
     private router: Router,
-    private adminService: AdminService,
     private http: HttpClient
   ) { }
 
@@ -43,10 +39,6 @@ export class DashboardComponent implements OnInit {
         }
       }
     });
-  }
-
-  onSearch(): void {
-    this.adminService.setSearchTerm(this.searchTerm);
   }
 
   logout(): void {

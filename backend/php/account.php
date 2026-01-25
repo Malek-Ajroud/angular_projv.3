@@ -1,20 +1,15 @@
 <?php
-/**
- * Account API Endpoint
- */
 
-// Prevent PHP from outputting errors as HTML/Text
-error_reporting(0);
-ini_set('display_errors', 0);
 
-// Clear any previous output (whitespace, notices)
+
+
 if (ob_get_length())
     ob_clean();
 ob_start();
 
 require_once __DIR__ . '/../config/cors.php';
-require_once __DIR__ . '/../models/User.php';
-require_once __DIR__ . '/../utils/JWT.php';
+require_once __DIR__ . '/../models/UserModel.php';
+require_once __DIR__ . '/../utils/JWTHandler.php';
 require_once __DIR__ . '/../utils/Response.php';
 
 // Set header correctly

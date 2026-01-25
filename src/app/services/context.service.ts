@@ -1,4 +1,5 @@
-import { Injectable } from '@angular/core';
+import { Injectable, Inject, PLATFORM_ID } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
 import { BehaviorSubject } from 'rxjs';
 
 /**
@@ -21,15 +22,20 @@ export interface ChildProfile {
 export class ContextService {
     private childProfileSubject = new BehaviorSubject<any>(null);
     public childProfile$ = this.childProfileSubject.asObservable();
+    private isBrowser: boolean;
 
-    constructor() {
-        // Load from localStorage if available
-        const savedProfile = localStorage.getItem('child_profile');
-        if (savedProfile) {
-            try {
-                this.childProfileSubject.next(JSON.parse(savedProfile));
-            } catch (e) {
-                console.error('Error parsing saved child profile', e);
+    constructor(@Inject(PLATFORM_ID) platformId: Object) {
+        this.isBrowser = isPlatformBrowser(platformId);
+
+        // Load from localStorage if available and in browser
+        if (this.isBrowser) {
+            const savedProfile = localStorage.getItem('child_profile');
+            if (savedProfile) {
+                try {
+                    this.childProfileSubject.next(JSON.parse(savedProfile));
+                } catch (e) {
+                    console.error('Error parsing saved child profile', e);
+                }
             }
         }
     }
@@ -44,7 +50,9 @@ export class ContextService {
     updateChildProfile(profile: any): void {
         const cleanProfile = this.filterEmptyFields(profile);
         this.childProfileSubject.next(cleanProfile);
-        localStorage.setItem('child_profile', JSON.stringify(cleanProfile));
+        if (this.isBrowser) {
+            localStorage.setItem('child_profile', JSON.stringify(cleanProfile));
+        }
         console.log('Profil mis à jour (ContextService):', cleanProfile);
     }
 
@@ -145,5 +153,23 @@ export class ContextService {
             matieres_a_renforcer: weakSubjects,
             besoin_aide: weakSubjects.length > 0
         };
+    }
+
+    hasData(): boolean {
+        const profile = this.getChildProfile();
+        return profile && Object.keys(profile).length > 0;
+    }
+
+    /**
+     * Retourne un JSON propre et léger pour le chatbot.
+     */
+    getAnalysisJSON(): string {
+        const profile = this.getChildProfile();
+        const analysis = this.analyzeProfile();
+
+        return JSON.stringify({
+            donnees_parents: profile,
+            analyse_automatique: analysis
+        }, null, 2);
     }
 }

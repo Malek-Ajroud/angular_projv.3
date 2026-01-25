@@ -4,13 +4,6 @@
             <h1 class="text-admin-title">Espace Parent Admin</h1>
             <p class="text-admin-subtitle">Vue d'ensemble de votre application</p>
         </div>
-        <div class="header-actions">
-            <div class="search-box">
-                <i class="fa fa-search"></i>
-                <input type="text" [(ngModel)]="searchTerm" (ngModelChange)="onSearch()"
-                    placeholder="Rechercher partout..." class="search-input">
-            </div>
-        </div>
     </header>
 
     <div class="stats-grid">
@@ -38,7 +31,7 @@
             </div>
         </div>
 
-        <!-- Conversations stats -->
+        
         <div class="stats-card card-convs">
             <div class="card-glass"></div>
             <div class="card-content">
@@ -51,7 +44,7 @@
         </div>
     </div>
 
-    <!-- Router outlet for sub-views like User Management -->
+    
     <div class="admin-view-content">
         <router-outlet></router-outlet>
     </div>

@@ -30,6 +30,14 @@
                 placeholder="0XXXXXXXXX" #phone="ngModel">
         </div>
 
+        <!-- Date d'inscription (Read-only) -->
+        <div class="form-group">
+            <label>Date d'inscription</label>
+            <div class="form-control-static" style="padding: 0.8rem 0; color: #666;">
+                {{ user.created_at | date:'dd MMMM yyyy' }}
+            </div>
+        </div>
+
         <hr style="margin: 2rem 0; opacity: 0.1;">
 
         <h3 style="margin-bottom: 1.5rem; font-size: 1.2rem; color: var(--purple-primary);">Changer le mot de passe</h3>

@@ -75,7 +75,7 @@ export class HomeworkService {
    * Angular → PHP → Educanet
    */
   getHomeworkDetail(homeworkId: number): Observable<any> {
-    const url = `/api/getHomeworkDetail.php?homeworkId=${homeworkId}`;
+    const url = `/api/php/getHomeworkDetail.php?homeworkId=${homeworkId}`;
 
     console.log('Appel détail devoir:', url);
 
@@ -92,7 +92,7 @@ export class HomeworkService {
    * Angular → PHP → Educanet
    */
   downloadFile(fileId: number): Observable<Blob> {
-    const url = `/api/download.php?fileId=${fileId}`;
+    const url = `/api/php/download.php?fileId=${fileId}`;
     return this.http.get(url, { responseType: 'blob' });
   }
 

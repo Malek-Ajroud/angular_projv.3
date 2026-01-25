@@ -41,6 +41,7 @@ export class QuestionnaireComponent {
     }
 
     onSubmit(): void {
+        console.log('Questionnaire soumis avec les données:', this.formData);
         this.contextService.updateChildProfile(this.formData);
         alert('Questionnaire enregistré avec succès !');
         this.router.navigate(['/chat']); // Navigate to chat to see the context in action

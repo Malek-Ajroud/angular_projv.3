@@ -12,9 +12,8 @@ import { AdminService, UserDetails } from '../../../services/admin.service';
 })
 export class UserManagementComponent implements OnInit {
     users: any[] = [];
-    filteredUsers: any[] = []; // For search
+    filteredUsers: any[] = []; 
     searchTerm: string = '';
-
     selectedUser: UserDetails | null = null;
     selectedUserId: number | null = null;
     showSidePanel: boolean = false;
@@ -50,34 +49,40 @@ export class UserManagementComponent implements OnInit {
     }
 
     viewDetails(userId: number) {
-        this.selectedUserId = userId;
-        this.showSidePanel = true;
-        this.loadingDetails = true;
-        this.selectedUser = null; // Reset prev
+  this.showSidePanel = true;
+  this.loadingDetails = true;
+  this.selectedUser = null;
 
-        this.adminService.getUserDetails(userId).subscribe({
-            next: (res) => {
-                if (res.success) {
-                    this.selectedUser = res.data;
-                }
-                this.loadingDetails = false;
-            },
-            error: () => this.loadingDetails = false
-        });
+  this.adminService.getUserDetails(userId).subscribe({
+    next: (user) => {
+      if (user) {
+        this.selectedUser = user;
+      } else {
+        console.error('User not found');
+      }
+      this.loadingDetails = false;
+    },
+    error: (err) => {
+      console.error(err);
+      this.loadingDetails = false;
     }
+  });
+}
+
+
 
     closePanel() {
         this.selectedUserId = null;
         this.showSidePanel = false;
-        setTimeout(() => this.selectedUser = null, 300); // Clear after animation
+        setTimeout(() => this.selectedUser = null, 300); 
     }
 
     deleteUser(userId: number, event: Event) {
-        event.stopPropagation(); // Prevent row click
+        event.stopPropagation(); 
         if (confirm('Êtes-vous sûr de vouloir supprimer cet utilisateur ? Cette action est irréversible.')) {
             this.adminService.deleteUser(userId).subscribe({
                 next: (res) => {
-                    this.loadUsers(); // Reload
+                    this.loadUsers(); 
                     if (this.selectedUser?.profile.id === userId) {
                         this.closePanel();
                     }

@@ -78,11 +78,7 @@ class User
      */
     public function findById($id)
     {
-<<<<<<< HEAD:backend/models/UserModel.php
-        $stmt = $this->db->prepare("SELECT id, name, email, role, created_at FROM users WHERE id = :id");
-=======
         $stmt = $this->db->prepare("SELECT id, name, email, phone, role, created_at FROM users WHERE id = :id");
->>>>>>> 2615bcd57fe52ad60051ca3ce24a575aa79ae919:backend/models/User.php
         $stmt->execute(['id' => $id]);
         return $stmt->fetch();
     }
@@ -148,18 +144,11 @@ class User
     {
         return [
             'id' => $user['id'],
-<<<<<<< HEAD:backend/models/UserModel.php
             'name' => $user['name'],
             'email' => $user['email'],
+            'phone' => $user['phone'] ?? null,
             'role' => $user['role'] ?? 'user', // Default to user if not set
             'created_at' => $user['created_at']
-=======
-            'name' => $user['name'] ?? '',
-            'email' => $user['email'] ?? '',
-            'phone' => $user['phone'] ?? '',
-            'role' => $user['role'] ?? 'user',
-            'created_at' => $user['created_at'] ?? null
->>>>>>> 2615bcd57fe52ad60051ca3ce24a575aa79ae919:backend/models/User.php
         ];
     }
 

@@ -1,12 +1,4 @@
 <?php
-<<<<<<< HEAD
-
-=======
-/**
- * PURPOSE: Database connection settings.
- * CONTENT: MySQL credentials and PDO connection function.
- */
->>>>>>> 2615bcd57fe52ad60051ca3ce24a575aa79ae919
 define('DB_HOST', 'localhost');
 define('DB_NAME', 'bdStage');
 define('DB_USER', 'root');
