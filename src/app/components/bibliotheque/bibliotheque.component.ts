@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HomeworkService, Homework, HomeworkFile } from '../../services/homework.service';
-import { Observable } from 'rxjs';
+import { Observable, map } from 'rxjs';
 import { Router } from '@angular/router';
 
 @Component({
@@ -15,64 +15,123 @@ import { Router } from '@angular/router';
         <p class="subtitle">Retrouvez tous les documents recommandés pour le parcours de votre enfant.</p>
       </div>
 
-      <div *ngIf="(documents$ | async) as docs" class="content-area">
-        
-        <div class="empty-state" *ngIf="docs.length === 0">
-          <div class="icon-circle">
-            <i class="fa fa-book-bookmark"></i>
+      <!-- Top Filtering Row -->
+      <div class="top-filter-row" *ngIf="(documents$ | async) as allDocs">
+        <div class="filter-row-container" *ngIf="allDocs.length > 0">
+          
+          <!-- Left: Child Selection (25%) -->
+          <div class="child-picker-section">
+            <div class="filter-label"><i class="fa fa-child"></i> Mes Enfants</div>
+            <div class="child-pills">
+              <button 
+                class="child-pill" 
+                [class.active]="currentChild === 'all'"
+                (click)="setChildFilter('all')"
+              >
+                Tous
+              </button>
+              <button 
+                *ngFor="let childName of getChildrenNames(allDocs)"
+                class="child-pill" 
+                [class.active]="currentChild === childName"
+                (click)="setChildFilter(childName)"
+              >
+                {{ childName }}
+              </button>
+            </div>
           </div>
-          <h2>Votre bibliothèque est vide</h2>
-          <p>Dès que vous aurez rempli le questionnaire, nous sélectionnerons les meilleures ressources pour votre enfant.</p>
-          <button class="btn-action" (click)="goToQuestionnaire()">Saisir le questionnaire</button>
-        </div>
 
-        <div class="child-sections" *ngIf="docs.length > 0">
-          <div class="child-section" *ngFor="let group of getGroupedDocuments(docs)">
-            <div class="child-header">
-              <div class="child-avatar">
-                <i class="fa fa-child"></i>
-              </div>
-              <div class="child-info">
-                <h2 class="child-name">{{ group.name }}</h2>
-                <div class="child-meta">
-                  <span class="meta-item"><i class="fa fa-graduation-cap"></i> {{ group.level }}</span>
-                  <span class="meta-item"><i class="fa fa-book-open"></i> {{ group.subjects.join(', ') }}</span>
+          <!-- Right: Subject Selection (75%) -->
+          <div class="subject-picker-section">
+            <div class="filter-label"><i class="fa fa-book"></i> Filtrer par matière</div>
+            <div class="subject-pills">
+              <button 
+                *ngFor="let filter of filters" 
+                class="subject-pill" 
+                [class.active]="currentFilter === filter.value"
+                (click)="setFilter(filter.value)"
+              >
+                <ng-container [ngSwitch]="filter.icon">
+                  <div *ngSwitchCase="'eiffel'" class="custom-icon-pill">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M12 2L12 4M9 4L12 2L15 4M10 22V19C10 17.8954 10.8954 17 12 17C13.1046 17 14 17.8954 14 19V22M2 22L22 22M7 22L9 11L15 11L17 22M9 11L10 7L14 7L15 11"/>
+                    </svg>
+                  </div>
+                  <div *ngSwitchCase="'bigben'" class="custom-icon-pill">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <rect x="9" y="4" width="6" height="14" rx="1"/><path d="M12 2L12 4M9 4L12 2L15 4M12 18L12 22M8 22L16 22"/><circle cx="12" cy="8" r="1.5"/>
+                    </svg>
+                  </div>
+                  <i *ngSwitchDefault [class]="filter.icon"></i>
+                </ng-container>
+                <span>{{ filter.label }}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Full Width Content Area -->
+      <div class="content-full-width">
+        <div *ngIf="filteredDocuments$ | async as docs" class="content-area">
+          
+          <div class="empty-state" *ngIf="docs.length === 0">
+            <div class="icon-circle">
+              <i class="fa fa-search"></i>
+            </div>
+            <h2>Aucun document trouvé</h2>
+            <p>Essayez de modifier vos filtres.</p>
+            <button class="btn-action" (click)="resetFilters()">Tout afficher</button>
+          </div>
+
+          <div class="child-sections" *ngIf="docs.length > 0">
+            <div class="child-section" *ngFor="let group of getGroupedDocuments(docs)">
+              <div class="child-header">
+                <div class="child-avatar">
+                  <i class="fa fa-child"></i>
+                </div>
+                <div class="child-info">
+                  <h2 class="child-name">{{ group.name }}</h2>
+                  <div class="child-meta">
+                    <span class="meta-item"><i class="fa fa-graduation-cap"></i> {{ group.level }}</span>
+                    <span class="meta-item"><i class="fa fa-book-open"></i> {{ group.subjects.join(', ') }}</span>
+                  </div>
                 </div>
               </div>
-            </div>
 
-            <div class="documents-grid">
-              <div class="doc-card" *ngFor="let doc of group.documents">
-                <button class="delete-icon" (click)="deleteDocument(doc.id, doc.childName)" title="Supprimer">
-                  <i class="fa fa-times"></i>
-                </button>
-                <div class="card-content">
-                  <div class="card-header">
-                    <span class="subject-badge">{{ doc.subject || 'Général' }}</span>
-                    <span class="date-badge" *ngIf="doc.addedAt">
-                      <i class="fa fa-calendar-alt"></i> {{ doc.addedAt | date:'dd/MM/yyyy' }}
-                    </span>
-                  </div>
-                  
-                  <h3 class="doc-title">{{ doc.title }}</h3>
-                  
-                  <div class="files-container">
-                    <div class="file-row" *ngFor="let file of doc.files">
-                      <div class="file-info" (click)="download(file)" style="cursor: pointer;">
-                        <div class="file-icon">
-                          <i class="fa fa-file-pdf"></i>
+              <div class="documents-grid">
+                <div class="doc-card" *ngFor="let doc of group.documents">
+                  <button class="delete-icon" (click)="deleteDocument(doc.id, doc.childName)" title="Supprimer">
+                    <i class="fa fa-times"></i>
+                  </button>
+                  <div class="card-content">
+                    <div class="card-header">
+                      <span class="subject-badge">{{ doc.subject || 'Général' }}</span>
+                      <span class="date-badge" *ngIf="doc.addedAt">
+                        <i class="fa fa-calendar-alt"></i> {{ doc.addedAt | date:'dd/MM/yyyy' }}
+                      </span>
+                    </div>
+                    
+                    <h3 class="doc-title">{{ doc.title }}</h3>
+                    
+                    <div class="files-container">
+                      <div class="file-row" *ngFor="let file of doc.files">
+                        <div class="file-info" (click)="download(file)" style="cursor: pointer;">
+                          <div class="file-icon">
+                            <i class="fa fa-file-pdf"></i>
+                          </div>
+                          <span class="file-name">{{ file.nom }}</span>
                         </div>
-                        <span class="file-name">{{ file.nom }}</span>
+                        <button class="download-trigger" (click)="download(file)">
+                          <i class="fa fa-cloud-download-alt"></i>
+                        </button>
                       </div>
-                      <button class="download-trigger" (click)="download(file)">
-                        <i class="fa fa-cloud-download-alt"></i>
-                      </button>
                     </div>
                   </div>
                 </div>
               </div>
+              <div class="section-divider"></div>
             </div>
-            <div class="section-divider"></div>
           </div>
         </div>
       </div>
@@ -97,6 +156,202 @@ import { Router } from '@angular/router';
       background-image: 
         radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.1) 0, transparent 50%), 
         radial-gradient(at 100% 0%, rgba(168, 85, 247, 0.1) 0, transparent 50%);
+    }
+
+    .top-filter-row {
+      max-width: 1400px;
+      margin: 0 auto 40px;
+      padding: 0 24px;
+    }
+
+    .filter-row-container {
+      display: flex;
+      gap: 24px;
+      background: white;
+      padding: 24px;
+      border-radius: 24px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.03);
+      border: 1px solid rgba(255,255,255,0.8);
+      backdrop-filter: blur(10px);
+    }
+
+    .child-picker-section {
+      flex: 0 0 25%;
+      border-right: 1px solid #f1f5f9;
+      padding-right: 24px;
+    }
+
+    .subject-picker-section {
+      flex: 1;
+      padding-left: 10px;
+    }
+
+    .filter-label {
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: #94a3b8;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .filter-label i {
+      color: var(--primary);
+    }
+
+    .child-pills, .subject-pills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .child-pill, .subject-pill {
+      padding: 8px 16px;
+      border: 1px solid #e2e8f0;
+      background: white;
+      border-radius: 12px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: #64748b;
+      cursor: pointer;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .child-pill:hover, .subject-pill:hover {
+      border-color: var(--primary);
+      color: var(--primary);
+      background: rgba(99, 102, 241, 0.05);
+    }
+
+    .child-pill.active, .subject-pill.active {
+      background: var(--primary-gradient);
+      color: white;
+      border-color: transparent;
+      box-shadow: 0 8px 15px rgba(99, 102, 241, 0.2);
+      transform: translateY(-2px);
+    }
+
+    .custom-icon-pill {
+      width: 18px;
+      height: 18px;
+    }
+
+    .custom-icon-pill svg {
+      width: 100%; height: 100%; stroke: currentColor;
+    }
+
+    .content-full-width {
+      width: 100%;
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+      display: flex;
+      justify-content: center;
+      margin-bottom: 40px;
+      padding: 0 20px;
+    }
+
+    .filter-bar {
+      display: flex;
+      gap: 12px;
+      padding: 8px;
+      background: white;
+      border-radius: 20px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+      border: 1px solid rgba(0,0,0,0.03);
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .filter-btn {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 20px;
+      border: none;
+      background: transparent;
+      border-radius: 14px;
+      color: #64748b;
+      font-weight: 600;
+      font-size: 0.95rem;
+      cursor: pointer;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .filter-btn i {
+      font-size: 1.1rem;
+    }
+
+    .filter-btn:hover {
+      background: #f1f5f9;
+      color: var(--primary);
+    }
+
+    .filter-btn.active {
+      background: var(--primary-gradient);
+      color: white;
+      box-shadow: 0 8px 15px rgba(99, 102, 241, 0.2);
+      transform: translateY(-2px);
+    }
+
+    /* Custom SVG Icon Styles */
+    .custom-icon {
+      position: relative;
+      width: 22px;
+      height: 22px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .custom-icon svg {
+      width: 100%;
+      height: 100%;
+      stroke: currentColor;
+    }
+
+    .filter-btn.active .custom-icon svg {
+      stroke: white;
+    }
+
+    .flag-mini {
+      position: absolute;
+      bottom: -4px;
+      right: -4px;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      border: 1.5px solid white;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .fr-flag {
+      background: linear-gradient(to right, #002395 33.3%, #ffffff 33.3%, #ffffff 66.6%, #ed2939 66.6%);
+    }
+
+    .en-flag {
+      background: #00247d;
+      position: absolute;
+    }
+    
+    .en-flag::before, .en-flag::after {
+      content: '';
+      position: absolute;
+      background: white;
+    }
+    
+    .en-flag::before {
+      width: 100%; height: 2px; top: 50%; left: 0; transform: translateY(-50%);
+    }
+    .en-flag::after {
+      width: 2px; height: 100%; left: 50%; top: 0; transform: translateX(-50%);
     }
 
     .header-section {
@@ -181,7 +436,7 @@ import { Router } from '@angular/router';
     /* Grid Layout */
     .documents-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+      grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
       gap: 30px;
       margin: 0 auto;
     }
@@ -397,12 +652,67 @@ import { Router } from '@angular/router';
 })
 export class BibliothequeComponent implements OnInit {
   documents$: Observable<Homework[]>;
+  filteredDocuments$: Observable<Homework[]>;
+
+  currentFilter: string = 'all';
+  currentChild: string = 'all';
+
+  filters = [
+    { label: 'Toutes', value: 'all', icon: 'fa fa-th-large' },
+    { label: 'Mathématiques', value: 'mathematiques', icon: 'fa fa-calculator' },
+    { label: 'Français', value: 'francais', icon: 'eiffel' },
+    { label: 'Anglais', value: 'anglais', icon: 'bigben' },
+    { label: 'Arabe', value: 'arabe', icon: 'fa fa-pen-nib' },
+    { label: 'Éveil', value: 'eveil scientifique', icon: 'fa fa-flask' }
+  ];
 
   constructor(private homeworkService: HomeworkService, private router: Router) {
     this.documents$ = this.homeworkService.recommendedDocuments$;
+    this.filteredDocuments$ = this.documents$;
   }
 
   ngOnInit(): void { }
+
+  setFilter(filter: string): void {
+    this.currentFilter = filter;
+    this.applyFilters();
+  }
+
+  setChildFilter(childName: string): void {
+    this.currentChild = childName;
+    this.applyFilters();
+  }
+
+  resetFilters(): void {
+    this.currentFilter = 'all';
+    this.currentChild = 'all';
+    this.applyFilters();
+  }
+
+  private applyFilters(): void {
+    this.filteredDocuments$ = this.documents$.pipe(
+      map(docs => docs.filter(doc => {
+        // Child Filter
+        const childMatch = this.currentChild === 'all' || doc.childName === this.currentChild;
+
+        // Subject Filter
+        const subject = (doc.subject || '').toLowerCase();
+        const subjectMatch = this.currentFilter === 'all' ||
+          subject.includes(this.currentFilter) ||
+          this.currentFilter.includes(subject);
+
+        return childMatch && subjectMatch;
+      }))
+    );
+  }
+
+  getChildrenNames(docs: Homework[]): string[] {
+    const names = new Set<string>();
+    docs.forEach(d => {
+      if (d.childName) names.add(d.childName);
+    });
+    return Array.from(names);
+  }
 
   goToQuestionnaire(): void {
     this.router.navigate(['/questionnaire']);

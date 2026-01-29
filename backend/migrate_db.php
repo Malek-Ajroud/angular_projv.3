@@ -73,6 +73,17 @@ try {
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;";
     $pdo->exec($sqlMsg);
     echo "Table 'chat_messages' ensured.\n";
+    
+    // 5. document_chunks (for RAG)
+    $sqlRag = "CREATE TABLE IF NOT EXISTS document_chunks (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        content TEXT NOT NULL,
+        embedding JSON NOT NULL,
+        source_file VARCHAR(255) NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;";
+    $pdo->exec($sqlRag);
+    echo "Table 'document_chunks' ensured.\n";
 
     echo "Migration completed successfully.\n";
 

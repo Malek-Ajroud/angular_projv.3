@@ -28,7 +28,7 @@ class User
      * @param string|null $phone
      * @return array|false
      */
-    public function create($name, $email, $password, $role = 'user', $phone = null)
+    public function create($name, $email, $password,$phone, $role = 'user')
     {
         // Check if email already exists
         if ($this->findByEmail($email)) {
@@ -38,16 +38,16 @@ class User
         $passwordHash = password_hash($password, PASSWORD_BCRYPT);
 
         $stmt = $this->db->prepare("
-            INSERT INTO users (name, email, password_hash, role, phone) 
-            VALUES (:name, :email, :password_hash, :role, :phone)
+            INSERT INTO users (name, email, password_hash, phone , role) 
+            VALUES (:name, :email, :password_hash, :phone, :role)
         ");
 
         $stmt->execute([
             'name' => $name,
             'email' => $email,
             'password_hash' => $passwordHash,
-            'role' => $role,
-            'phone' => $phone
+            'phone' => $phone,
+            'role' => $role
         ]);
 
         $userId = $this->db->lastInsertId();

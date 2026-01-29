@@ -11,6 +11,14 @@ ini_set('display_errors', 1);
 require_once __DIR__ . '/config.php';
 $pdo = getDBConnection();
 
+// Disable output buffering
+if (ob_get_level())
+    ob_end_clean();
+header('Content-Type: application/x-ndjson');
+header('Cache-Control: no-cache');
+header('X-Accel-Buffering: no'); // For Nginx
+header('Connection: keep-alive');
+
 /**
  * Log debug information
  */
@@ -89,10 +97,13 @@ if (empty($question)) {
 
 try {
     // 2. Embed
+    $startEmbed = microtime(true);
     $resEmbed = callOllama('/api/embeddings', [
         'model' => OLLAMA_MODEL_EMBED,
         'prompt' => $question
     ]);
+    $embedTime = microtime(true) - $startEmbed;
+    ragLog("Embedding time: " . round($embedTime, 4) . "s");
 
     if (!isset($resEmbed['embedding'])) {
         throw new Exception("Modèle d'embedding non disponible. Lancez 'ollama pull " . OLLAMA_MODEL_EMBED . "'");
@@ -101,6 +112,7 @@ try {
     $queryVector = $resEmbed['embedding'];
 
     // 3. Search Chunks
+    $startSearch = microtime(true);
     $stmt = $pdo->query("SELECT content, embedding, source_file FROM document_chunks");
     $allChunks = $stmt->fetchAll();
 
@@ -119,10 +131,12 @@ try {
         });
 
         $contextStrings = [];
-        ragLog("Top matches for: " . $question);
-        foreach (array_slice($results, 0, 5) as $c) {
+        $searchTime = microtime(true) - $startSearch;
+        ragLog("Search/Similarity time (" . count($allChunks) . " chunks): " . round($searchTime, 4) . "s");
+
+        foreach (array_slice($results, 0, 3) as $c) { // Reduced from 5 to 3 for speed
             ragLog("Score: " . round($c['similarity'], 4) . " | Source: " . $c['source'] . " | Content: " . mb_substr($c['content'], 0, 50) . "...");
-            if ($c['similarity'] > 0.35) { // Threshold légèrement réduit
+            if ($c['similarity'] > 0.40) { // Threshold légèrement augmenté
                 $contextStrings[] = "[" . $c['source'] . "]: " . $c['content'];
             }
         }
@@ -131,11 +145,10 @@ try {
     }
 
     // 4. Prepare Ollama Chat
-    $ragInstructions = "### INFORMATIONS IMPORTANTES (À UTILISER EN PRIORITÉ) :\n" . $contextText . "\n\n" .
-        "RÈGLES POUR TA RÉPONSE :\n" .
-        "- Si la réponse est dans les INFORMATIONS ci-dessus, tu DOIS l'utiliser.\n" .
-        "- Ne dis pas 'Je vais chercher sur le site' ou 'D'après mes recherches'. Réponds directement.\n" .
-        "- Si l'info n'est pas là, dis : 'Nos documents ne précisent pas cela, mais en général...'";
+    $ragInstructions = "### INFORMATIONS DE RÉFÉRENCE :\n" . $contextText . "\n\n" .
+        "RÈGLES :\n" .
+        "- Utilise les infos ci-dessus SI elles sont pertinentes.\n" .
+        "- Réponds succinctement et directement.";
 
     // On remplace le premier message système (s'il existe) par une version fusionnée pour éviter les conflits
     if (count($history) > 0 && $history[0]['role'] === 'system') {

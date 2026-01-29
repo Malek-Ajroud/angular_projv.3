@@ -64,18 +64,21 @@
     display: flex;
     align-items: center;
     gap: 15px;
-    padding: 1rem 1.5rem;
+    padding: 0.8rem 1.5rem;
     text-decoration: none;
-    color: #ef4444;
-    /* Red color */
+    color: white;
+    background: linear-gradient(135deg, #f87171, #ef4444);
     border-radius: var(--radius-md);
-    transition: all 0.3s ease;
-    font-weight: 500;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    font-weight: 600;
+    margin: 0.5rem;
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2);
 }
 
 .logout-section a:hover {
-    background: rgba(239, 68, 68, 0.05);
-    transform: translateX(5px);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 15px rgba(239, 68, 68, 0.3);
+    opacity: 0.9;
 }
 
 .logout-section a i {

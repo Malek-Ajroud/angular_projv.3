@@ -54,7 +54,8 @@ try {
     $user = $userModel->create(
         $input['name'],
         $input['email'],
-        $input['password']
+        $input['password'],
+        $input['phone']
     );
 
     if (!$user) {

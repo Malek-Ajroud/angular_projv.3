@@ -113,12 +113,12 @@ Tu es l'assistant pédagogique STRICT et OFFICIEL des plateformes Rafi9ni et 9is
             });
 
             if (this.homeworkContext?.length > 0) {
-                fullPrompt += `\n\n### SEULES RESSOURCES AUTORISÉES (BIBLIOTHÈQUE) :`;
-                this.homeworkContext.forEach((d: any) => {
-                    fullPrompt += `\n- TITRE: "${d.title}" (Matière: ${d.subject})`;
+                fullPrompt += `\n\n### RESSOURCES DISPONIBLES (TOP 5) :`;
+                this.homeworkContext.slice(0, 5).forEach((d: any) => {
+                    fullPrompt += `\n- "${d.title}" (Matière: ${d.subject})`;
                 });
             } else {
-                fullPrompt += `\n\n⚠️ AUCUNE RESSOURCE DISPONIBLE. Ne propose RIEN d'autre.`;
+                fullPrompt += `\n\n⚠️ AUCUNE RESSOURCE DISPONIBLE.`;
             }
         }
 
