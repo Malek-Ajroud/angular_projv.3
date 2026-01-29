@@ -2,13 +2,15 @@
  * PURPOSE: Interface for talking to the AI assistant.
  * CONTENT: Displays message bubbles, handles user input, and interacts with AiChatService for streaming responses.
  */
-import { Component, ElementRef, ViewChild, AfterViewChecked, OnInit, Inject, PLATFORM_ID } from '@angular/core';
+import { Component, ElementRef, ViewChild, AfterViewChecked, OnInit, Inject, PLATFORM_ID, HostListener } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AiChatService, ChatMessage } from '../../services/ai-chat.service';
 import { ChatHistoryService, ChatConversation } from '../../services/chat-history.service';
 import { AuthService } from '../../services/auth.service';
+import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
+import { HomeworkService } from '../../services/homework.service';
 
 @Component({
     selector: 'app-chat',
@@ -30,10 +32,14 @@ export class ChatComponent implements OnInit, AfterViewChecked {
     currentConversationId: number | null = null;
     isSidebarOpen = true;
 
+    isSending = false;
+
     constructor(
         private aiChatService: AiChatService,
         private chatHistoryService: ChatHistoryService,
         private authService: AuthService,
+        private sanitizer: DomSanitizer,
+        private homeworkService: HomeworkService,
         @Inject(PLATFORM_ID) platformId: any
     ) {
         this.isBrowser = isPlatformBrowser(platformId);
@@ -58,9 +64,9 @@ export class ChatComponent implements OnInit, AfterViewChecked {
                 if (res.success) {
                     this.conversations = res.data;
                     // Automatically load the latest conversation if available
-                    if (this.conversations.length > 0) {
+                    if (this.conversations.length > 0 && this.currentConversationId === null) {
                         this.selectConversation(this.conversations[0].id);
-                    } else {
+                    } else if (this.conversations.length === 0) {
                         this.startNewChat();
                     }
                 }
@@ -69,6 +75,7 @@ export class ChatComponent implements OnInit, AfterViewChecked {
     }
 
     selectConversation(id: number): void {
+        if (this.isSending) return; // Empêcher le changement pendant l'envoi
         this.currentConversationId = id;
         this.isTyping = true;
         this.messages = [];
@@ -97,10 +104,11 @@ export class ChatComponent implements OnInit, AfterViewChecked {
     }
 
     startNewChat(): void {
+        if (this.isSending) return;
         this.currentConversationId = null;
         this.messages = [
             {
-                text: "Bonjour ! Je suis votre assistant parental virtuel spécialisé en éducation et nutrition. Comment puis-je vous aider aujourd'hui ?",
+                text: "Bonjour Cher parent ! Je suis l'assistant pédagogique officiel. Je suis prêt à vous aider pour le suivi de votre enfant. Comment puis-je vous assister aujourd'hui ?",
                 sender: 'ai',
                 timestamp: new Date()
             }
@@ -118,15 +126,16 @@ export class ChatComponent implements OnInit, AfterViewChecked {
     }
 
     sendMessage(): void {
-        if (!this.userMessage || this.userMessage.trim() === '') {
+        if (this.isSending || !this.userMessage || this.userMessage.trim() === '') {
             return;
         }
 
+        this.isSending = true;
         const messageText = this.userMessage;
+        this.userMessage = ""; // Vider l'input immédiatement
 
         // If no conversation active, create one first
         if (this.currentConversationId === null) {
-            // Use first 30 chars of message as title
             const title = messageText.length > 30 ? messageText.substring(0, 30) + '...' : messageText;
             this.chatHistoryService.createConversation(title).subscribe({
                 next: (res) => {
@@ -134,8 +143,11 @@ export class ChatComponent implements OnInit, AfterViewChecked {
                         this.currentConversationId = res.data.id;
                         this.conversations = [res.data, ...this.conversations];
                         this.processMessage(messageText);
+                    } else {
+                        this.isSending = false;
                     }
-                }
+                },
+                error: () => this.isSending = false
             });
         } else {
             this.processMessage(messageText);
@@ -176,7 +188,7 @@ export class ChatComponent implements OnInit, AfterViewChecked {
             next: (chunk) => {
                 if (!firstChunkReceived) {
                     firstChunkReceived = true;
-                    this.isTyping = false; // Hide indicator when first chunk arrives
+                    this.isTyping = false;
                 }
                 fullResponse += chunk;
                 this.messages[aiMessageIndex].text = fullResponse;
@@ -186,9 +198,11 @@ export class ChatComponent implements OnInit, AfterViewChecked {
                 console.error("Erreur chat:", err);
                 this.messages[aiMessageIndex].text = "Désolé, une erreur s'est produite. Veuillez réessayer.";
                 this.isTyping = false;
+                this.isSending = false;
             },
             complete: () => {
                 this.isTyping = false;
+                this.isSending = false;
                 // Save AI response to DB
                 if (this.currentConversationId) {
                     this.chatHistoryService.saveMessage(this.currentConversationId, 'ai', fullResponse).subscribe();
@@ -215,9 +229,76 @@ export class ChatComponent implements OnInit, AfterViewChecked {
         this.isSidebarOpen = !this.isSidebarOpen;
     }
 
+    renderMessage(text: string): SafeHtml {
+        if (!text) return '';
+
+        // 1. Détection des liens Markdown de téléchargement
+        // Format supporté : [Nom du fichier](/api/php/download.php?fileId=XX[&path=YY])
+        // Regex update: capture ID ($2) allowing any chars until '&', and optional path ($3)
+        // This handles cases where fileId is 'undefined', 'NaN', 'null' or empty string
+        const rendered = text.replace(/\[([^\]]+)\]\(\/api\/php\/download\.php\?fileId=([^&]*)(?:&path=([^)]*))?\)/g,
+            (match, label, id, path) => {
+                const escapedLabel = label.replace(/"/g, '&quot;');
+                const dataPath = path ? decodeURIComponent(path) : '';
+                return `<a href="#" class="chat-download-link" data-id="${id}" data-path="${dataPath}" data-name="${escapedLabel}"><i class="fa fa-download"></i> ${label}</a>`;
+            });
+
+        return this.sanitizer.bypassSecurityTrustHtml(rendered);
+    }
+
+    downloadFromChat(fileId: number, fileName: string, filePath?: string): void {
+        console.log('ChatComponent: Téléchargement demandé pour', fileId, fileName, 'Path:', filePath);
+
+        // Construct the HomeworkFile object to match the service signature
+        const downloadUrl = `/api/php/download.php?fileName=${encodeURIComponent(fileName)}&path=${encodeURIComponent(filePath || '')}`;
+
+        const fileObj: any = { // Using any to avoid strict type checks if interface imports are missing in this file
+            fileId: fileId,
+            fileName: fileName,
+            nom: fileName,
+            path: filePath,
+            downloadUrl: downloadUrl
+        };
+
+        this.homeworkService.downloadFile(fileObj).subscribe({
+            next: (blob) => {
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = fileName.endsWith('.pdf') ? fileName : `${fileName}.pdf`;
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(a);
+            },
+            error: (err) => console.error('Erreur téléchargement chat:', err)
+        });
+    }
+
+    @HostListener('click', ['$event'])
+    onChatClick(event: MouseEvent): void {
+        const target = event.target as HTMLElement;
+        const link = target.closest('.chat-download-link');
+
+        if (link) {
+            event.preventDefault();
+            const fileId = link.getAttribute('data-id');
+            const fileName = link.getAttribute('data-name');
+            const filePath = link.getAttribute('data-path') || undefined;
+
+            console.log('Chat Click Intercepted:', { fileId, fileName, filePath });
+
+            // Fix: Allow download if fileName is present AND (fileId OR filePath) is present.
+            // This supports legacy files that might have an empty ID but a valid Path.
+            if (fileName && (fileId || filePath)) {
+                // If ID is missing/invalid, pass 0. The service will rely on filePath.
+                const numericId = fileId && !isNaN(Number(fileId)) ? Number(fileId) : 0;
+                this.downloadFromChat(numericId, fileName, filePath);
+            }
+        }
+    }
+
     clearChat(): void {
         this.startNewChat();
     }
 }
-
-

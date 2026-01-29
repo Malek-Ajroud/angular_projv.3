@@ -8,52 +8,89 @@ import { BehaviorSubject } from 'rxjs';
  */
 export interface ChildProfile {
     niveauScolaire: string;
-    matieresEnDifficulte: string;
+    matieresEnDifficulte: string[]; // Support multiple subjects
     pointsAAmeliorer: string;
     // Raw fields for API calls
     rawNiveau?: string;
     rawMatiere?: string;
     rawDifficulte?: string;
+    q_nom?: string;
 }
 
 @Injectable({
     providedIn: 'root'
 })
 export class ContextService {
-    private childProfileSubject = new BehaviorSubject<any>(null);
+    private childProfileSubject = new BehaviorSubject<any[]>([]);
     public childProfile$ = this.childProfileSubject.asObservable();
     private isBrowser: boolean;
 
-    constructor(@Inject(PLATFORM_ID) platformId: Object) {
+    constructor(
+        @Inject(PLATFORM_ID) platformId: Object
+        // Ideally we would inject AuthService here, but that causes a circular dependency.
+        // Instead, we will pass the userId when updating/loading.
+    ) {
         this.isBrowser = isPlatformBrowser(platformId);
+        // We defer loading to when we have a user context, or we rely on the component to pass the user ID.
+    }
 
-        // Load from localStorage if available and in browser
+    private getStorageKey(userId: number | string): string {
+        return `child_profile_${userId}`;
+    }
+
+    loadProfileForUser(userId: number): void {
         if (this.isBrowser) {
-            const savedProfile = localStorage.getItem('child_profile');
+            const savedProfile = localStorage.getItem(this.getStorageKey(userId));
             if (savedProfile) {
                 try {
-                    this.childProfileSubject.next(JSON.parse(savedProfile));
+                    const data = JSON.parse(savedProfile);
+                    this.childProfileSubject.next(Array.isArray(data) ? data : [data]);
                 } catch (e) {
                     console.error('Error parsing saved child profile', e);
+                    this.childProfileSubject.next([]);
                 }
+            } else {
+                this.childProfileSubject.next([]);
             }
         }
+    }
+
+    clearProfile(): void {
+        this.childProfileSubject.next([]);
     }
 
     /**
      * Processes raw questionnaire data (Legacy/Mock adapter)
      */
-    setProfileFromForm(rawData: any): void {
-        this.updateChildProfile(rawData);
+    setProfileFromForm(rawData: any, userId?: number): void {
+        this.updateChildProfile(rawData, userId);
     }
 
-    updateChildProfile(profile: any): void {
+    updateChildProfile(profile: any, userId?: number): void {
         const cleanProfile = this.filterEmptyFields(profile);
-        this.childProfileSubject.next(cleanProfile);
-        if (this.isBrowser) {
-            localStorage.setItem('child_profile', JSON.stringify(cleanProfile));
+        const currentProfiles = this.childProfileSubject.value;
+
+        let updatedProfiles: any[];
+        // Si on a un nom, on essaie de mettre à jour l'enfant existant
+        if (cleanProfile.q_nom) {
+            const index = currentProfiles.findIndex(p => p.q_nom === cleanProfile.q_nom);
+            if (index !== -1) {
+                updatedProfiles = [...currentProfiles];
+                updatedProfiles[index] = cleanProfile;
+            } else {
+                updatedProfiles = [...currentProfiles, cleanProfile];
+            }
+        } else {
+            // Sinon on remplace tout (legacy)
+            updatedProfiles = [cleanProfile];
         }
-        console.log('Profil mis à jour (ContextService):', cleanProfile);
+
+        this.childProfileSubject.next(updatedProfiles);
+
+        if (this.isBrowser && userId) {
+            localStorage.setItem(this.getStorageKey(userId), JSON.stringify(updatedProfiles));
+        }
+        console.log('Profils mis à jour (ContextService):', updatedProfiles);
     }
 
     private filterEmptyFields(obj: any): any {
@@ -70,6 +107,11 @@ export class ContextService {
     }
 
     getChildProfile(): any {
+        const profiles = this.childProfileSubject.value;
+        return profiles.length > 0 ? profiles[profiles.length - 1] : null;
+    }
+
+    getAllProfiles(): any[] {
         return this.childProfileSubject.value;
     }
 
@@ -80,22 +122,25 @@ export class ContextService {
     getProfile(): ChildProfile | null {
         const p = this.getChildProfile();
         if (!p) return null;
+        return this.formatChildSummary(p);
+    }
 
-        // Use the analysis logic to determine weak subjects
-        const analysis = this.analyzeProfile();
-        const matiere = (analysis?.matieres_a_renforcer && analysis.matieres_a_renforcer.length > 0)
-            ? analysis.matieres_a_renforcer[0]
-            : (p.matiere || 'Général');
+    public formatChildSummary(p: any): ChildProfile {
+        const analysis = this.analyzeSingleProfile(p);
+        const matieres = (analysis?.matieres_a_renforcer && analysis.matieres_a_renforcer.length > 0)
+            ? analysis.matieres_a_renforcer
+            : (p.q_matiere ? [p.q_matiere] : (p.matiere ? [p.matiere] : ['Général']));
 
-        const niveau = p.q_niveau ? this.formatNiveau(p.q_niveau) : (p.niveau || 'CE1');
+        const niveau = p.q_niveau ? this.formatNiveau(p.q_niveau) : (p.niveau || '3ème année');
 
         return {
             niveauScolaire: niveau,
-            matieresEnDifficulte: matiere,
-            pointsAAmeliorer: p.q_obs || 'Aucune observation',
+            matieresEnDifficulte: matieres,
+            pointsAAmeliorer: p.q_obs || p.q_comportement || 'Aucune observation',
             rawNiveau: niveau,
-            rawMatiere: matiere,
-            rawDifficulte: p.difficulte
+            rawMatiere: matieres[0],
+            rawDifficulte: (p.q_math ?? 20) < 12 ? 'Faible' : 'Normal',
+            q_nom: p.q_nom || ''
         };
     }
 
@@ -133,7 +178,10 @@ export class ContextService {
     analyzeProfile(): any {
         const profile = this.getChildProfile();
         if (!profile) return null;
+        return this.analyzeSingleProfile(profile);
+    }
 
+    private analyzeSingleProfile(profile: any): any {
         // Support both old keys (math) and new keys (q_math) if needed, but prioritizing new
         const getScore = (key: string) => profile[key] !== undefined ? Number(profile[key]) : undefined;
 
@@ -164,12 +212,14 @@ export class ContextService {
      * Retourne un JSON propre et léger pour le chatbot.
      */
     getAnalysisJSON(): string {
-        const profile = this.getChildProfile();
-        const analysis = this.analyzeProfile();
+        const allProfiles = this.getAllProfiles();
+        const analyses = allProfiles.map(p => ({
+            donnees_parents: p,
+            analyse_automatique: this.analyzeSingleProfile(p)
+        }));
 
         return JSON.stringify({
-            donnees_parents: profile,
-            analyse_automatique: analysis
+            enfants: analyses
         }, null, 2);
     }
 }

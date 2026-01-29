@@ -41,8 +41,7 @@
         <div class="chat-history" #chatHistory>
             <div class="message-bubble" *ngFor="let msg of messages"
                 [ngClass]="{'message-user': msg.sender === 'user', 'message-ai': msg.sender === 'ai'}">
-                <div class="message-content">
-                    {{ msg.text }}
+                <div class="message-content" [innerHTML]="renderMessage(msg.text)">
                 </div>
                 <div class="message-time">
                     {{ msg.timestamp | date:'HH:mm' }}
@@ -56,8 +55,10 @@
 
         <div class="chat-input-area">
             <form (ngSubmit)="sendMessage()">
-                <input type="text" [(ngModel)]="userMessage" name="userMessage" placeholder="Écrivez votre message...">
-                <button type="submit" [disabled]="!userMessage">
+                <input type="text" [(ngModel)]="userMessage" name="userMessage"
+                    [placeholder]="isSending ? 'L\'assistant réfléchit...' : 'Écrivez votre message...'"
+                    [disabled]="isSending">
+                <button type="submit" [disabled]="!userMessage || isSending">
                     <i class="fa fa-paper-plane"></i>
                 </button>
             </form>

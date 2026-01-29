@@ -43,6 +43,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
                 u.name, 
                 u.email, 
                 u.role, 
+                u.is_active,
                 u.created_at,
                 COUNT(DISTINCT c.id) as children_count,
                 COUNT(DISTINCT cc.id) as conversations_count
@@ -50,7 +51,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
             LEFT JOIN children c ON u.id = c.user_id
             LEFT JOIN chat_conversations cc ON u.id = cc.user_id
             WHERE u.id != :id
-            GROUP BY u.id, u.name, u.email, u.role, u.created_at
+            GROUP BY u.id, u.name, u.email, u.role, u.is_active, u.created_at
             ORDER BY u.created_at DESC
         ");
         $stmt->execute(['id' => $payload['user_id']]);
@@ -62,8 +63,55 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     }
 }
 
-// If not GET or DELETE
-if ($_SERVER['REQUEST_METHOD'] !== 'GET' && $_SERVER['REQUEST_METHOD'] !== 'DELETE') {
+// Handle POST (Add User)
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $input = json_decode(file_get_contents('php://input'), true);
+
+    if (empty($input['name']) || empty($input['email']) || empty($input['password'])) {
+        Response::error('Nom, email et mot de passe requis', 400);
+    }
+
+    try {
+        $password_hash = password_hash($input['password'], PASSWORD_BCRYPT);
+        $stmt = $conn->prepare("
+            INSERT INTO users (name, email, password_hash, role, phone) 
+            VALUES (:name, :email, :password_hash, :role, :phone)
+        ");
+        $stmt->execute([
+            'name' => $input['name'],
+            'email' => $input['email'],
+            'password_hash' => $password_hash,
+            'role' => $input['role'] ?? 'user',
+            'phone' => $input['phone'] ?? null
+        ]);
+        Response::success([], 'Utilisateur ajouté');
+    } catch (PDOException $e) {
+        Response::error('Erreur lors de l\'ajout : ' . $e->getMessage(), 500);
+    }
+}
+
+// Handle PATCH (Toggle Status)
+if ($_SERVER['REQUEST_METHOD'] === 'PATCH') {
+    $input = json_decode(file_get_contents('php://input'), true);
+
+    if (!isset($input['id']) || !isset($input['is_active'])) {
+        Response::error('ID et statut requis', 400);
+    }
+
+    try {
+        $stmt = $conn->prepare("UPDATE users SET is_active = :is_active WHERE id = :id");
+        $stmt->execute([
+            'is_active' => $input['is_active'] ? 1 : 0,
+            'id' => $input['id']
+        ]);
+        Response::success([], 'Statut mis à jour');
+    } catch (PDOException $e) {
+        Response::error('Erreur lors de la mise à jour : ' . $e->getMessage(), 500);
+    }
+}
+
+// If not GET, POST, DELETE or PATCH
+if (!in_array($_SERVER['REQUEST_METHOD'], ['GET', 'POST', 'DELETE', 'PATCH'])) {
     Response::error('Method not allowed', 405);
 }
 ?>

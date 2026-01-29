@@ -50,11 +50,19 @@ export class AuthService {
      */
     private checkAuth(): void {
         const token = this.getToken();
+        const savedUser = this.getSavedUser();
+
+        // Immediately restore user from localStorage to prevent sidebar flicker
+        if (token && savedUser) {
+            this.currentUserSubject.next(savedUser);
+        }
+
         if (token) {
             this.verifyToken().subscribe({
                 next: (response) => {
                     if (response.success) {
                         this.currentUserSubject.next(response.data.user);
+                        this.saveUser(response.data.user);
                     } else {
                         // this.logout(); // Disabled during debug
                     }
@@ -63,6 +71,32 @@ export class AuthService {
                     // this.logout(); // Disabled during debug
                 }
             });
+        }
+    }
+
+    /**
+     * Get saved user from localStorage
+     */
+    private getSavedUser(): User | null {
+        if (this.isBrowser) {
+            const saved = localStorage.getItem('auth_user');
+            if (saved) {
+                try {
+                    return JSON.parse(saved);
+                } catch {
+                    return null;
+                }
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Save user to localStorage
+     */
+    private saveUser(user: User): void {
+        if (this.isBrowser) {
+            localStorage.setItem('auth_user', JSON.stringify(user));
         }
     }
 
@@ -79,6 +113,7 @@ export class AuthService {
             tap(response => {
                 if (response.success) {
                     this.setToken(response.data.token);
+                    this.saveUser(response.data.user);
                     this.currentUserSubject.next(response.data.user);
                 }
             })
@@ -96,6 +131,7 @@ export class AuthService {
             tap(response => {
                 if (response.success) {
                     this.setToken(response.data.token);
+                    this.saveUser(response.data.user);
                     this.currentUserSubject.next(response.data.user);
                 }
             })
@@ -115,6 +151,7 @@ export class AuthService {
     logout(): void {
         if (this.isBrowser) {
             localStorage.removeItem('auth_token');
+            localStorage.removeItem('auth_user');
         }
         this.currentUserSubject.next(null);
     }

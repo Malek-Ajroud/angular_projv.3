@@ -1,5 +1,5 @@
-$source = "c:\Users\msi-cyborg\.gemini\antigravity\scratch\angular-project-main\backend"
-$destination = "C:\wamp64\www\backend"
+$source = "c:\Users\LENOVO\.gemini\antigravity\scratch\proj_angular\AngularProject-version2\backend"
+$destination = "C:\xampp\htdocs\backend"
 
 if (Test-Path $source) {
     if (!(Test-Path $destination)) {

@@ -215,6 +215,145 @@
     font-weight: 500;
 }
 
+/* Button Styles */
+.btn-primary {
+    background: linear-gradient(135deg, #a855f7, #6366f1);
+    color: white;
+    border: none;
+    padding: 0.75rem 1.5rem;
+    border-radius: 1rem;
+    font-weight: 500;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: all 0.2s;
+    box-shadow: 0 4px 15px rgba(168, 85, 247, 0.2);
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(168, 85, 247, 0.3);
+}
+
+.btn-secondary {
+    background: #f3f4f6;
+    color: #4b5563;
+    border: none;
+    padding: 0.75rem 1.5rem;
+    border-radius: 1rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-secondary:hover {
+    background: #e5e7eb;
+}
+
+.search-container {
+    width: 100%;
+    margin-bottom: 0.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+/* Form Styles for Add User */
+.add-user-form {
+    padding: 0.5rem;
+}
+
+.form-group {
+    margin-bottom: 1.5rem;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    color: #4b5563;
+    font-weight: 500;
+    font-size: 0.95rem;
+}
+
+.form-group input,
+.form-group select {
+    width: 100%;
+    padding: 0.875rem 1rem;
+    border: 1px solid #e5e7eb;
+    border-radius: 0.75rem;
+    font-size: 1rem;
+    transition: all 0.2s;
+}
+
+.form-group input:focus,
+.form-group select:focus {
+    outline: none;
+    border-color: #a855f7;
+    box-shadow: 0 0 0 3px rgba(168, 85, 247, 0.1);
+}
+
+.form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+    margin-top: 2rem;
+}
+
+/* Status Badges */
+.badge {
+    padding: 0.25rem 0.75rem;
+    border-radius: 1rem;
+    font-size: 0.85rem;
+    font-weight: 500;
+}
+
+.status-badge.active-status {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.status-badge.inactive-status {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.badge-role {
+    font-size: 0.75rem;
+    background: #f3e8ff;
+    color: #7e22ce;
+    padding: 0.2rem 0.5rem;
+    border-radius: 0.5rem;
+    margin-left: 0.5rem;
+    text-transform: uppercase;
+}
+
+.user-item.inactive {
+    opacity: 0.6;
+}
+
+.details-placeholder {
+    height: 400px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: #9ca3af;
+    gap: 1.5rem;
+}
+
+.icon-placeholder {
+    font-size: 4rem;
+    color: #e5e7eb;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.icon-placeholder:hover {
+    color: #a855f7;
+    transform: scale(1.1);
+}
+
 /* Loader */
 .loader-container {
     height: 400px;

@@ -1,0 +1,148 @@
+<?php
+// download.php
+// Proxy intelligent v4 : Avec JOURNALISATION (Debug Log)
+
+header('Access-Control-Allow-Origin: *');
+header('Access-Control-Allow-Headers: Content-Type, Authorization, X-Token');
+
+$fileId = $_GET['fileId'] ?? null;
+$path = $_GET['path'] ?? null;
+
+// LOGGING FUNCTION
+function debugLog($msg)
+{
+    $date = date('Y-m-d H:i:s');
+    file_put_contents('debug_download.log', "[$date] $msg" . PHP_EOL, FILE_APPEND);
+}
+
+debugLog("--- NEW REQUEST ---");
+debugLog("Params: fileId=" . ($fileId ?? 'NULL') . ", path=" . ($path ?? 'NULL'));
+
+if (!$fileId && !$path) {
+    http_response_code(400);
+    exit('Missing fileId or path');
+}
+
+// 🔐 Token
+$headers = getallheaders();
+$token = 'EDUCANET_TECH_TOKEN';
+if (isset($headers['Authorization']) && preg_match('/Bearer\s(\S+)/', $headers['Authorization'], $matches)) {
+    $token = $matches[1];
+    debugLog("Token found in Auth header");
+} elseif (isset($headers['X-Token'])) {
+    $token = $headers['X-Token'];
+    debugLog("Token found in X-Token");
+} else {
+    debugLog("WARNING: No Token found!");
+}
+
+/**
+ * Tente le téléchargement
+ */
+function attemptDownload($url, $token)
+{
+    if (!$url)
+        return ['code' => 400, 'type' => 'error'];
+
+    debugLog("Attempting: $url");
+
+    $ch = curl_init($url);
+    curl_setopt_array($ch, [
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_FOLLOWLOCATION => true,
+        CURLOPT_HTTPHEADER => ["Authorization: Bearer $token"],
+        CURLOPT_SSL_VERIFYPEER => false,
+        CURLOPT_TIMEOUT => 30
+    ]);
+
+    $data = curl_exec($ch);
+    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    $contentType = curl_getinfo($ch, CURLINFO_CONTENT_TYPE);
+    $fileSize = strlen($data);
+    curl_close($ch);
+
+    debugLog("Result: Code=$httpCode, Type=$contentType, Size=$fileSize");
+
+    // FILTRAGE
+    if ($httpCode === 200) {
+        if (stripos($contentType, 'text/html') !== false) {
+            debugLog("REJECT: Detected HTML content");
+            $httpCode = 404;
+        }
+        if (stripos($contentType, 'application/json') !== false) {
+            debugLog("REJECT: Detected JSON content");
+            $httpCode = 404;
+        }
+        if ($fileSize < 50) {
+            debugLog("REJECT: File too small (<50b)");
+            $httpCode = 404;
+        }
+    }
+
+    return ['code' => $httpCode, 'data' => $data, 'type' => $contentType, 'size' => $fileSize];
+}
+
+$errorLog = [];
+
+// STRAT 1 : ID
+if ($fileId) {
+    $url = "https://mon-compte.rafi9ni.pro/mobile/homeWork/download/$fileId";
+    $res = attemptDownload($url, $token);
+    if ($res['code'] === 200)
+        streamFile($res, $url);
+}
+
+// STRAT 2 : Webapps
+if ($path) {
+    $cleanPath = ltrim($path, '/');
+    $url = "https://mon-compte.rafi9ni.pro/webapps/" . $cleanPath;
+    $res = attemptDownload($url, $token);
+    if ($res['code'] === 200)
+        streamFile($res, $url);
+}
+
+// STRAT 3 : Root
+if ($path) {
+    $cleanPath = ltrim($path, '/');
+    $url = "https://mon-compte.rafi9ni.pro/" . $cleanPath;
+    if (strpos($url, '/webapps/') === false) {
+        $res = attemptDownload($url, $token);
+        if ($res['code'] === 200)
+            streamFile($res, $url);
+    }
+}
+
+// STRAT 4 : Staff
+if ($path) {
+    $cleanPath = ltrim($path, '/');
+    $url = "https://staff.rafi9ni.pro/" . $cleanPath;
+    $res = attemptDownload($url, $token);
+    if ($res['code'] === 200)
+        streamFile($res, $url);
+}
+
+// FAILURE
+debugLog("ALL STRATEGIES FAILED. Sending 404.");
+http_response_code(404);
+exit("File not found");
+
+function streamFile($fileData, $sourceUrl)
+{
+    debugLog("SUCCESS! Streaming file from $sourceUrl");
+    $contentType = $fileData['type'];
+    $fileSize = $fileData['size'];
+    $fileName = basename(parse_url($sourceUrl, PHP_URL_PATH));
+
+    // Correction Type
+    if (!$contentType || $contentType == 'text/plain') {
+        if (strpos($sourceUrl, '.pdf') !== false)
+            $contentType = 'application/pdf';
+        // ... (autres types)
+    }
+
+    header("Content-Type: $contentType");
+    header("Content-Disposition: attachment; filename=\"$fileName\"");
+    header("Content-Length: $fileSize");
+    echo $fileData['data'];
+    exit;
+}

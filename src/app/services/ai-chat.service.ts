@@ -8,6 +8,7 @@ import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { AuthService } from './auth.service';
 import { ContextService, ChildProfile } from './context.service';
+import { HomeworkService, Homework } from './homework.service';
 
 export interface ChatMessage {
     text: string;
@@ -21,24 +22,33 @@ export interface ChatMessage {
 export class AiChatService {
 
     private apiUrl = environment.OLLAMA_API_URL;
-    private currentProfile: ChildProfile | null = null;
     private homeworkContext: any = null;
 
     // System prompt to constrain the AI to educational and nutrition topics
-    private readonly SYSTEM_PROMPT = `Tu es un assistant parental virtuel spécialisé en ÉDUCATION et NUTRITION.
-Ton but est d'aider les parents avec des conseils pratiques, bienveillants et personnalisés.
+    // System prompt pour l'IA adaptée aux parents tunisiens
+    private readonly SYSTEM_PROMPT = `أنت المساعد التربوي الرسمي لمنصة Rafi9ni و 9isati.
+Tu es l'assistant pédagogique STRICT et OFFICIEL des plateformes Rafi9ni et 9isati.
 
-DOMAINES AUTORISÉS :
-1. ÉDUCATION : Devoirs, difficultés scolaires, comportement, développement de l'enfant, activités éducatives.
-2. NUTRITION : Recettes pour enfants, équilibre alimentaire, santé, allergies.
-3. CONTEXTE ENFANT : Tu dois impérativement utiliser les informations du "CONTEXTE ENFANT ACTUEL" et des "RESSOURCES PÉDAGOGIQUES" fournies ci-dessous. 
+⚠️ RÈGLES DE FER (CRITIQUES) :
+1. 🌍 LANGUE OBLIGATOIRE : 
+   - SI LE PARENT ÉCRIT EN ARABE (العربية) -> RÉPONDS **EXCLUSIVEMENT** EN ARABE.
+   - إذا كتب الولي بالعربية، يجب أن تجيب بالعربية فقط!
+   - SI LE PARENT ÉCRIT EN FRANÇAIS -> RÉPONDS **EXCLUSIVEMENT** EN FRANÇAIS.
+   - NE JAMAIS RÉPONDRE EN FRANÇAIS À UNE QUESTION EN ARABE.
 
-RÈGLES CRITIQUES :
-- Si la section "RESSOURCES PÉDAGOGIQUES" contient des informations, tu DOIS les inclure dans ton résumé.
-- Ne dis jamais que tu n'as pas trouvé de ressources si des données sont présentes.
-- Cite le titre exact du document et propose les liens de téléchargement.
-- Adapte tes recommandations en fonction du niveau de l'enfant et du contenu du document.
-- Réponds en français.`;
+2. 👤 ADRESSE AU PARENT :
+   - Commence TOUJOURS ta réponse par "**عزيزي الولي**" (si en arabe) ou "**Cher parent**" (si en français).
+   - NE JAMAIS mélanger les langues dans la salutation (ex: pas de "Hello Cher Parent").
+   - NE JAMAIS s'adresser à l'enfant. Parle de lui à la troisième personne (votre fils/fille).
+
+3. 🚫 RESSOURCES EXTERNES INTERDITES :
+   - INTERDICTION TOTALE de recommander YouTube, Netflix, Disney, Google, ou des livres externes.
+   - Propose UNIQUEMENT les documents listés dans la "BIBLIOTHÈQUE" ci-dessous.
+   - Si rien n'est disponible, dis : "Je n'ai pas de documents spécifiques pour le moment".
+
+4. 📚 CONTEXTE :
+   - Rafi9ni (Scolaire), 9isati (Comportement), Délice (Goûter).
+   - Base tes conseils sur l'âge, le niveau et les notes du profil.`;
 
     private conversationHistory: Array<{ role: string; content: string }> = [
         { role: 'system', content: this.SYSTEM_PROMPT }
@@ -48,67 +58,84 @@ RÈGLES CRITIQUES :
         private http: HttpClient,
         private authService: AuthService,
         private contextService: ContextService,
+        private homeworkService: HomeworkService,
         private ngZone: NgZone
     ) {
         this.authService.currentUser$.subscribe(user => {
-            if (!user) {
+            if (user) {
+                console.log('AiChatService: Utilisateur connecté, chargement du profil...', user.id);
+                this.contextService.loadProfileForUser(user.id);
+                this.homeworkService.loadLibrary(user.id);
+                this.updateSystemPromptWithProfile();
+            } else {
+                this.homeworkService.clearLibrary();
                 this.clearHistory();
             }
         });
 
-        this.contextService.childProfile$.subscribe(profile => {
-            console.log('AiChatService: Profil reçu:', profile);
-            this.currentProfile = this.contextService.getProfile(); // Use the adapter to get mapped fields
+        // 1. React to Profile Changes -> Trigger Search for each child if needed
+        this.contextService.childProfile$.subscribe(profiles => {
+            console.log('AiChatService: Changement de profils détecté:', profiles?.length || 0);
+
+            // On déclenche la recherche pour le dernier profil mis à jour (le dernier de la liste)
+            if (profiles && profiles.length > 0) {
+                const latestProfile = this.contextService.getProfile();
+                if (latestProfile) {
+                    this.homeworkService.performSearch(latestProfile);
+                }
+            }
+
             this.updateSystemPromptWithProfile();
-            // Clear history to ensure the new context is picked up for the next message
-            this.clearHistory();
+        });
+
+        // 2. React to Documents Found -> Update Prompt
+        this.homeworkService.recommendedDocuments$.subscribe((docs: Homework[]) => {
+            console.log('AiChatService: Documents mis à jour:', docs.length);
+            this.homeworkContext = docs;
+            this.updateSystemPromptWithProfile();
         });
     }
 
     setHomeworkContext(homeworkData: any): void {
+        // Legacy support if needed, but now we use subscription
         this.homeworkContext = homeworkData;
         this.updateSystemPromptWithProfile();
     }
 
     private getSystemPromptWithProfile(): string {
         let fullPrompt = this.SYSTEM_PROMPT;
+        const allProfiles = this.contextService.getAllProfiles();
 
-        if (this.currentProfile) {
-            fullPrompt += `
+        if (allProfiles && allProfiles.length > 0) {
+            fullPrompt += `\n\n### DONNÉES OBLIGATOIRES À UTILISER :`;
+            allProfiles.forEach((p, index) => {
+                const child = this.contextService.formatChildSummary(p);
+                const name = p.q_nom || child.q_nom || `Enfant ${index + 1}`;
+                fullPrompt += `\n- ENFANT: ${name} (${p.q_age} ans), Niveau: ${child.niveauScolaire}, Difficultés: ${child.matieresEnDifficulte.join(', ')}`;
+            });
 
-CONTEXTE ENFANT ACTUEL :
-- Niveau scolaire : ${this.currentProfile.niveauScolaire}
-- Difficultés : ${this.currentProfile.matieresEnDifficulte}
-- Points d'attention : ${this.currentProfile.pointsAAmeliorer}`;
+            if (this.homeworkContext?.length > 0) {
+                fullPrompt += `\n\n### SEULES RESSOURCES AUTORISÉES (BIBLIOTHÈQUE) :`;
+                this.homeworkContext.forEach((d: any) => {
+                    fullPrompt += `\n- TITRE: "${d.title}" (Matière: ${d.subject})`;
+                });
+            } else {
+                fullPrompt += `\n\n⚠️ AUCUNE RESSOURCE DISPONIBLE. Ne propose RIEN d'autre.`;
+            }
         }
 
-        if (this.homeworkContext) {
-            // Extraction selon la structure réelle : { homeWork: { name: "...", homeworkfiles: { fileEducanet: [...] } } }
-            const hw = this.homeworkContext.homeWork || this.homeworkContext;
-            const cleanResources = {
-                titre: hw.name || hw.titre || 'Ressource pédagogique',
-                fichiers: (hw.homeworkfiles?.fileEducanet || []).map((f: any) => ({
-                    nom: f.title || f.fileName,
-                    lien: f.path
-                }))
-            };
-
-            fullPrompt += `
-
-RESSOURCES PÉDAGOGIQUES TROUVÉES (API) :
-${JSON.stringify(cleanResources, null, 2)}
-
-INSTRUCTION CRITIQUE : Ne fais PAS de long résumé. Donne juste le titre du document et le(s) lien(s) de téléchargement PDF de manière professionnelle.`;
-        }
-
-        fullPrompt += `\n\nUtilise impérativement ces informations pour tes conseils.`;
+        fullPrompt += `\n\n### INTERDICTIONS STRICTES :
+- NE JAMAIS citer YouTube, Netflix, Disney, Harry Potter, Le Petit Prince ou tout livre/site externe.
+- SI TU CITES UN ÉLÉMENT EXTERNE, TU ÉCHOUES À TA MISSION.
+- Réponds UNIQUEMENT sur la base de Rafi9ni (scolaire) et 9isati (comportement).
+- Adresse-toi TOUJOURS au parent en disant "**عزيزي الولي**" (en arabe) ou "**Cher parent**" (en français). Ne nomme l'enfant que pour donner des informations sur son suivi.`;
 
         return fullPrompt;
     }
 
     private updateSystemPromptWithProfile(): void {
         const fullPrompt = this.getSystemPromptWithProfile();
-        console.log('AiChatService: Système Prompt mis à jour avec le contexte:', fullPrompt);
+        // Prompt logging disabled for performance and readability
 
         // Ensure the system prompt is always at the beginning of the history
         if (this.conversationHistory.length > 0 && this.conversationHistory[0].role === 'system') {
@@ -119,12 +146,9 @@ INSTRUCTION CRITIQUE : Ne fais PAS de long résumé. Donne juste le titre du doc
     }
 
     sendMessageStream(userMessage: string): Observable<string> {
-        // The system prompt is already managed by updateSystemPromptWithProfile() 
-        // which is called when the profile or homework context changes.
-        // We just need to ensure it's there.
         this.updateSystemPromptWithProfile();
 
-        // Add user message to conversation history
+        console.log('AiChatService: Ajout du message utilisateur à l\'historique...');
         this.conversationHistory.push({
             role: 'user',
             content: userMessage
@@ -132,59 +156,60 @@ INSTRUCTION CRITIQUE : Ne fais PAS de long résumé. Donne juste le titre du doc
 
         return new Observable(observer => {
             const body = {
-                model: 'llama3.2',
+                model: 'llama3.2:latest',
                 messages: this.conversationHistory,
                 stream: true,
                 options: {
                     temperature: 0.7,
-                    num_ctx: 4096
+                    num_ctx: 2048,
+                    num_predict: 512
                 }
             };
 
-            console.log('AiChatService: Envoi requête à Ollama (llama3.2)...');
-            console.dir(body.messages);
+            console.log('AiChatService: Envoi requête POST vers', this.apiUrl);
+            console.log('AiChatService: Corps de la requête:', JSON.stringify(body, null, 2));
 
             fetch(this.apiUrl, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(body)
             })
                 .then(async response => {
-                    console.log('AiChatService: Réponse reçue de Ollama, status:', response.status);
+                    console.log('AiChatService: Réponse HTTP reçue, statut:', response.status);
+
                     if (!response.ok) {
-                        const text = await response.text();
-                        throw new Error(`Ollama error (${response.status}): ${text}`);
+                        const errorText = await response.text();
+                        console.error('AiChatService: Erreur Ollama reçue:', errorText);
+                        throw new Error(`Ollama error (${response.status}): ${errorText}`);
                     }
 
-                    const reader = response.body?.getReader();
+                    if (!response.body) {
+                        console.error('AiChatService: Corps de réponse vide !');
+                        throw new Error('ReadableStream not supported or empty body');
+                    }
+
+                    const reader = response.body.getReader();
                     const decoder = new TextDecoder();
                     let fullResponse = '';
                     let buffer = '';
 
                     const readChunk = (): void => {
-                        reader?.read().then(({ done, value }) => {
+                        reader.read().then(({ done, value }) => {
                             if (done) {
-                                // Process any remaining content in buffer
+                                console.log('AiChatService: Flux terminé.');
                                 if (buffer.trim()) {
                                     this.processJsonLines(buffer, (content) => {
                                         fullResponse += content;
                                         this.ngZone.run(() => observer.next(content));
                                     });
                                 }
-
-                                // Add AI response to conversation history
-                                this.conversationHistory.push({
-                                    role: 'assistant',
-                                    content: fullResponse
-                                });
-                                console.log('AiChatService: Flux terminé. Appel à observer.complete()');
+                                this.conversationHistory.push({ role: 'assistant', content: fullResponse });
                                 this.ngZone.run(() => observer.complete());
                                 return;
                             }
 
                             const chunk = decoder.decode(value, { stream: true });
+                            console.log('AiChatService: Chunk reçu (longueur:', chunk.length, ')');
                             buffer += chunk;
 
                             const lastNewlineIndex = buffer.lastIndexOf('\n');
@@ -197,9 +222,9 @@ INSTRUCTION CRITIQUE : Ne fais PAS de long résumé. Donne juste le titre du doc
                                     this.ngZone.run(() => observer.next(content));
                                 });
                             }
-
                             readChunk();
                         }).catch(error => {
+                            console.error('AiChatService: Erreur lors de la lecture du flux:', error);
                             this.ngZone.run(() => observer.error(error));
                         });
                     };
@@ -207,6 +232,7 @@ INSTRUCTION CRITIQUE : Ne fais PAS de long résumé. Donne juste le titre du doc
                     readChunk();
                 })
                 .catch(error => {
+                    console.error('AiChatService: Erreur Fetch fatale:', error);
                     this.ngZone.run(() => observer.error(error));
                 });
         });
@@ -217,23 +243,14 @@ INSTRUCTION CRITIQUE : Ne fais PAS de long résumé. Donne juste le titre du doc
         for (const line of lines) {
             try {
                 const json = JSON.parse(line);
-                let content = '';
-
-                // standard chat content
                 if (json.message?.content) {
-                    content += json.message.content;
+                    onContent(json.message.content);
                 }
-
-                // reasoning/thought content if model supports it
-                if (json.message?.thought) {
-                    content += `[Pensée : ${json.message.thought}] `;
-                }
-
-                if (content) {
-                    onContent(content);
+                if (json.done) {
+                    console.log('AiChatService: Signal "done" reçu dans le JSON.');
                 }
             } catch (e) {
-                // Skip invalid JSON lines (might be partial)
+                console.warn('AiChatService: Erreur de parsing JSON sur la ligne:', line);
             }
         }
     }

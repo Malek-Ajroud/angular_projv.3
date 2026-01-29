@@ -28,7 +28,7 @@ class User
      * @param string|null $phone
      * @return array|false
      */
-    public function create($name, $email, $password, $role = 'user', $phone = null)
+    public function create($name, $email, $password, $phone, $role = 'user')
     {
         // Check if email already exists
         if ($this->findByEmail($email)) {
@@ -61,16 +61,16 @@ class User
      */
     public function findByEmail($email)
     {
-        $stmt = $this->db->prepare("SELECT id, name, email, password_hash, role, created_at FROM users WHERE email = :email");
+        $stmt = $this->db->prepare(
+            "SELECT id, name, email, phone, password_hash, role, is_active, created_at 
+         FROM users 
+         WHERE email = :email"
+        );
         $stmt->execute(['email' => $email]);
         return $stmt->fetch();
     }
 
-    /**
-     * Find user by ID
-     * @param int $id
-     * @return array|false
-     */
+
     /**
      * Find user by ID
      * @param int $id
@@ -78,7 +78,7 @@ class User
      */
     public function findById($id)
     {
-        $stmt = $this->db->prepare("SELECT id, name, email, phone, role, created_at FROM users WHERE id = :id");
+        $stmt = $this->db->prepare("SELECT id, name, email, phone, role, is_active, created_at FROM users WHERE id = :id");
         $stmt->execute(['id' => $id]);
         return $stmt->fetch();
     }
@@ -148,6 +148,7 @@ class User
             'email' => $user['email'],
             'phone' => $user['phone'] ?? null,
             'role' => $user['role'] ?? 'user', // Default to user if not set
+            'is_active' => isset($user['is_active']) ? (bool) $user['is_active'] : true,
             'created_at' => $user['created_at']
         ];
     }

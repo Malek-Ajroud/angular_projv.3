@@ -1,1 +1,28 @@
 /* Chat specific styles */
+::ng-deep .chat-download-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: #f0f7ff;
+    color: #007bff;
+    padding: 8px 12px;
+    border-radius: 6px;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 0.9rem;
+    margin: 5px 0;
+    border: 1px solid #cce5ff;
+    transition: all 0.2s;
+    cursor: pointer;
+}
+
+::ng-deep .chat-download-link:hover {
+    background: #007bff;
+    color: white;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 123, 255, 0.2);
+}
+
+::ng-deep .chat-download-link i {
+    font-size: 1.1rem;
+}

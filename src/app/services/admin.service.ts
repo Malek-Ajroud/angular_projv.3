@@ -17,6 +17,7 @@ export interface UserDetails {
         role: string;
         created_at: string;
         phone?: string;
+        is_active: boolean;
     };
     children: any[];
     stats: {
@@ -50,5 +51,13 @@ export class AdminService {
 
     deleteUser(id: number): Observable<any> {
         return this.http.delete(`${this.apiUrl}/users.php?id=${id}`);
+    }
+
+    addUser(userData: any): Observable<any> {
+        return this.http.post(`${this.apiUrl}/users.php`, userData);
+    }
+
+    toggleUserStatus(id: number, status: boolean): Observable<any> {
+        return this.http.patch(`${this.apiUrl}/users.php`, { id, is_active: status });
     }
 }

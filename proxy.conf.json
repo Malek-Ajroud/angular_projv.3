@@ -1,14 +1,14 @@
 {
-    
-
     "/api/chat": {
-        "target": "http://127.0.0.1:11434",
+        "target": "http://localhost:11434",
         "secure": false,
         "changeOrigin": true,
         "pathRewrite": {
             "^/api/chat": "/api/chat"
         },
-        "logLevel": "debug"
+        "logLevel": "debug",
+        "proxyTimeout": 600000,
+        "timeout": 600000
     },
     "/api/php": {
         "target": "http://127.0.0.1",
@@ -24,7 +24,7 @@
         "secure": false,
         "changeOrigin": true,
         "pathRewrite": {
-            "^/api/external": "/api/external"
+            "^/api/external": ""
         },
         "logLevel": "debug"
     },

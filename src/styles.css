@@ -95,6 +95,10 @@ body {
     min-height: 100vh;
 }
 
+.main-content.no-sidebar {
+    margin-left: 0;
+}
+
 .logo {
     display: flex;
     align-items: center;

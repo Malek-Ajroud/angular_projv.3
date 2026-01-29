@@ -14,6 +14,7 @@ import { CalendrierComponent } from './components/calendrier/calendrier.componen
 import { ChatComponent } from './components/chat/chat.component';
 import { GererCompteComponent } from './components/gerer-compte/gerer-compte.component';
 import { ConseilsComponent } from './components/conseils/conseils.component';
+import { BibliothequeComponent } from './components/bibliotheque/bibliotheque.component';
 import { LoginComponent } from './components/auth/login.component';
 import { SignupComponent } from './components/auth/signup.component';
 import { QuestionnaireComponent } from './components/questionnaire/questionnaire.component';
@@ -33,6 +34,7 @@ export const routes: Routes = [
     { path: 'calendrier', component: CalendrierComponent },
     { path: 'gerer-compte', component: GererCompteComponent },
     { path: 'conseils', component: ConseilsComponent },
+    { path: 'bibliotheque', component: BibliothequeComponent, canActivate: [authGuard] },
     {
         path: 'admin',
         loadComponent: () => import('./components/admin/admin-dashboard/admin-dashboard.component').then(m => m.AdminDashboardComponent),

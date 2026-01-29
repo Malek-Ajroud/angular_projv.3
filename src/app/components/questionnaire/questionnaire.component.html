@@ -18,11 +18,21 @@
         <form (ngSubmit)="onSubmit()" #questionnaireForm="ngForm">
             <div class="question-group">
                 <label class="question-label">
+                    <span [class.hidden]="currentLang !== 'fr'">Nom de l'enfant</span>
+                    <span [class.hidden]="currentLang !== 'ar'">اسم الطفل</span>
+                </label>
+                <input type="text" name="q_nom" [(ngModel)]="formData.q_nom"
+                    [placeholder]="currentLang === 'fr' ? 'Ex: Ahmed, Nour...' : 'مثال: أحمد، نور...'"
+                    class="form-control" required>
+            </div>
+
+            <div class="question-group">
+                <label class="question-label">
                     <span [class.hidden]="currentLang !== 'fr'">Âge de l'enfant</span>
                     <span [class.hidden]="currentLang !== 'ar'">عمر الطفل</span>
                 </label>
-                <input type="number" name="q_age" [(ngModel)]="formData.q_age" min="0" max="15" placeholder="0-15 ans"
-                    class="form-control">
+                <input type="number" name="q_age" [(ngModel)]="formData.q_age" min="5" max="15" placeholder="5-15 ans"
+                    class="form-control" required>
             </div>
 
             <div class="question-group">
@@ -39,9 +49,6 @@
                     <option value="4">4ème année</option>
                     <option value="5">5ème année</option>
                     <option value="6">6ème année</option>
-                    <option value="7">7ème année</option>
-                    <option value="8">8ème année</option>
-                    <option value="9">9ème année</option>
                 </select>
             </div>
 

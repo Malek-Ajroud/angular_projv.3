@@ -1,11 +1,12 @@
 <?php
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+
 /**
  * Signup API Endpoint
  */
 
-// Prevent PHP from outputting errors as HTML/Text
-error_reporting(0);
-ini_set('display_errors', 0);
+
 
 // Clear any previous output (whitespace, notices)
 if (ob_get_length())
@@ -43,6 +44,9 @@ if (empty($input['password'])) {
 } elseif (strlen($input['password']) < 6) {
     $errors['password'] = 'Le mot de passe doit contenir au moins 6 caractères';
 }
+if (empty($input['phone'])) {
+    $errors['phone'] = 'Le numéro de téléphone est requis';
+}
 
 if (!empty($errors)) {
     Response::validationError($errors);
@@ -54,8 +58,11 @@ try {
     $user = $userModel->create(
         $input['name'],
         $input['email'],
-        $input['password']
-    );
+        $input['password'],
+        $input['phone']
+);
+
+    
 
     if (!$user) {
         Response::error('Cet email est déjà utilisé', 409);

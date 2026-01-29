@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterOutlet } from '@angular/router';
+import { RouterOutlet, Router, NavigationEnd } from '@angular/router';
+import { filter } from 'rxjs/operators';
 import { SidebarComponent } from './components/sidebar/sidebar.component';
 import { ContextService } from './services/context.service';
 import { HomeworkService } from './services/homework.service';
@@ -19,98 +20,32 @@ import { switchMap } from 'rxjs/operators';
 export class AppComponent implements OnInit {
   mobileMenuOpen = false;
   currentUser$ = this.authService.currentUser$;
+  isLoginPage = false;
 
   constructor(
     private authService: AuthService,
     private contextService: ContextService,
     private homeworkService: HomeworkService,
-    private aiChatService: AiChatService
-  ) { }
+    private aiChatService: AiChatService,
+    private router: Router
+  ) {
+    // Check initial URL on page load
+    this.isLoginPage = this.router.url === '/login' || this.router.url === '/signup' || this.router.url === '/';
+
+    this.router.events.pipe(
+      filter(event => event instanceof NavigationEnd)
+    ).subscribe((event: any) => {
+      this.isLoginPage = event.url === '/login' || event.url === '/signup' || event.urlAfterRedirects === '/login';
+    });
+  }
 
   ngOnInit(): void {
-    // TEMPORAIRE : Simule la réception du questionnaire pour vérification
-    console.log("AppComponent: Simulation du profil enfant...");
-    this.contextService.simulateMockData();
-
-    // Chaînage API 1 (Recherche) -> API 2 (Détails) -> Step 6 (IA)
-    // Utilise l'adapteur getProfile() pour compatibilité
-    const profile = this.contextService.getProfile();
-
-    if (profile) {
-      console.log("AppComponent: Démarrage de la recherche automatique de devoirs...");
-      this.homeworkService.searchHomework(profile).pipe(
-        switchMap(res => {
-          console.log("AppComponent: [ÉTAPE 4] Réponse API 1 (TYPE):", typeof res);
-          // console.log("AppComponent: [ÉTAPE 4] Réponse API 1 (VALEUR):", JSON.stringify(res, null, 2));
-
-          const homeworks = res?.results?.homeWork || [];
-          let targetHomework = homeworks[0];
-
-          // Tentative de filtrage par matière si renseignée
-          if (profile.rawMatiere && homeworks.length > 0) {
-            const subject = profile.rawMatiere.toLowerCase();
-            const match = homeworks.find((h: any) =>
-              (h.title && h.title.toLowerCase().includes(subject)) ||
-              (h.matiere && h.matiere.toLowerCase().includes(subject)) ||
-              (h.subject && h.subject.toLowerCase().includes(subject))
-            );
-            if (match) {
-              console.log(`AppComponent: Devoir trouvé correspondant à la matière '${profile.rawMatiere}':`, match);
-              targetHomework = match;
-            }
-          }
-
-          const firstHomework = targetHomework;
-
-          // Priorité à l'ID de la matière si présent, sinon fallback sur les autres IDs
-          const homeworkId = firstHomework?.idMatiere || firstHomework?.idSubject || firstHomework?.idHomeWork || firstHomework?.id;
-
-          if (homeworkId) {
-            console.log("AppComponent: [ÉTAPE 5] ID trouvé (cible=matiere) :", homeworkId, ". Appel API 2...");
-            return this.homeworkService.getHomeworkDetail(homeworkId);
-          } else {
-            console.warn("AppComponent: Aucun document trouvé pour ce profil. La bibliothèque restera vide.");
-            return []; // Return empty array to stop chain gracefully
-          }
-        })
-      ).subscribe({
-        next: (detail: any) => {
-          if (!detail || Object.keys(detail).length === 0) return;
-
-          console.log("AppComponent: [ÉTAPE 5] Succès API 2 ->", detail);
-
-          this.aiChatService.setHomeworkContext(detail);
-          const profile = this.contextService.getProfile();
-          const hw = detail.homeWork || detail;
-
-          // ÉTAPE 7 : Sauvegarder dans la bibliothèque (PDF uniquement)
-          const title = hw.name || hw.titre || 'Document Pédagogique';
-
-          const files = (hw.homeworkfiles?.fileEducanet || []).map((f: any) => ({
-            nom: f.title || f.fileName,
-            lien: f.path
-          }));
-
-          if (files.length > 0 && profile) {
-            const entry = {
-              homeworkTitle: title,
-              files: files,
-              childProfile: profile
-            };
-            console.log("AppComponent: Fichiers trouvés:", files.length);
-          }
-
-          // Déclencher l'IA
-          console.log("AppComponent: Initialisation de l'Assistant IA...");
-          this.aiChatService.sendMessageStream("Bonjour ! J'ai trouvé un document pour votre enfant basés sur ses besoins. Comment puis-je vous aider ?").subscribe({
-            next: (chunk: string) => { /* chunk logic if needed */ },
-            error: (err: any) => console.error("IA Erreur :", err)
-          });
-        },
-        error: (err: any) => {
-          console.error("AppComponent: Erreur lors de la récupération automatique des documents.", err);
-        }
-      });
+    console.log("AppComponent: Initialized.");
+    // The AiChatService subscribes to ContextService and triggers the search automatically.
+    // We just need to ensure the profile is loaded.
+    const user = this.authService.getCurrentUser();
+    if (user) {
+      this.contextService.loadProfileForUser(user.id);
     }
   }
 
