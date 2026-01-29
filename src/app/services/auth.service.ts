@@ -41,7 +41,15 @@ export class AuthService {
         this.isBrowser = isPlatformBrowser(platformId);
         // Check if user is already logged in
         if (this.isBrowser) {
+            this.loadUserFromStorage();
             this.checkAuth();
+        }
+    }
+
+    private loadUserFromStorage(): void {
+        const savedUser = this.getSavedUser();
+        if (savedUser) {
+            this.currentUserSubject.next(savedUser);
         }
     }
 
@@ -50,21 +58,12 @@ export class AuthService {
      */
     private checkAuth(): void {
         const token = this.getToken();
-        const savedUser = this.getSavedUser();
-
-        // Immediately restore user from localStorage to prevent sidebar flicker
-        if (token && savedUser) {
-            this.currentUserSubject.next(savedUser);
-        }
-
         if (token) {
             this.verifyToken().subscribe({
                 next: (response) => {
                     if (response.success) {
                         this.currentUserSubject.next(response.data.user);
                         this.saveUser(response.data.user);
-                    } else {
-                        // this.logout(); // Disabled during debug
                     }
                 },
                 error: () => {
@@ -79,7 +78,7 @@ export class AuthService {
      */
     private getSavedUser(): User | null {
         if (this.isBrowser) {
-            const saved = localStorage.getItem('auth_user');
+            const saved = localStorage.getItem('auth_user') || localStorage.getItem('current_user');
             if (saved) {
                 try {
                     return JSON.parse(saved);
@@ -97,6 +96,8 @@ export class AuthService {
     private saveUser(user: User): void {
         if (this.isBrowser) {
             localStorage.setItem('auth_user', JSON.stringify(user));
+            // Keep both for compatibility during transition if needed
+            localStorage.setItem('current_user', JSON.stringify(user));
         }
     }
 
@@ -152,6 +153,7 @@ export class AuthService {
         if (this.isBrowser) {
             localStorage.removeItem('auth_token');
             localStorage.removeItem('auth_user');
+            localStorage.removeItem('current_user');
         }
         this.currentUserSubject.next(null);
     }

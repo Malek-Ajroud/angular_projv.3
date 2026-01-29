@@ -8,7 +8,6 @@ import { HomeworkService } from './services/homework.service';
 import { AiChatService } from './services/ai-chat.service';
 
 import { AuthService } from './services/auth.service';
-import { switchMap } from 'rxjs/operators';
 
 @Component({
   selector: 'app-root',
@@ -41,8 +40,6 @@ export class AppComponent implements OnInit {
 
   ngOnInit(): void {
     console.log("AppComponent: Initialized.");
-    // The AiChatService subscribes to ContextService and triggers the search automatically.
-    // We just need to ensure the profile is loaded.
     const user = this.authService.getCurrentUser();
     if (user) {
       this.contextService.loadProfileForUser(user.id);

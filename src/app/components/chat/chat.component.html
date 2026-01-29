@@ -55,10 +55,8 @@
 
         <div class="chat-input-area">
             <form (ngSubmit)="sendMessage()">
-                <input type="text" [(ngModel)]="userMessage" name="userMessage"
-                    [placeholder]="isSending ? 'L\'assistant réfléchit...' : 'Écrivez votre message...'"
-                    [disabled]="isSending">
-                <button type="submit" [disabled]="!userMessage || isSending">
+                <input type="text" [(ngModel)]="userMessage" name="userMessage" placeholder="Écrivez votre message...">
+                <button type="submit" [disabled]="!userMessage">
                     <i class="fa fa-paper-plane"></i>
                 </button>
             </form>

@@ -1,6 +1,6 @@
 /**
  * PURPOSE: Controls the AI Assistant (Chatbot).
- * CONTENT: Sends messages to Ollama, manages system prompts (educational/nutrition focus), and handles streaming responses.
+ * CONTENT: Sends messages to Ollama via RAG backend, manages system prompts, and handles streaming responses.
  */
 import { HttpClient } from '@angular/common/http';
 import { Injectable, NgZone } from '@angular/core';
@@ -21,7 +21,7 @@ export interface ChatMessage {
 })
 export class AiChatService {
 
-    private apiUrl = environment.OLLAMA_API_URL;
+    private apiUrl = '/api/rag/chatbot.php';
     private homeworkContext: any = null;
 
     // System prompt to constrain the AI to educational and nutrition topics
@@ -77,7 +77,6 @@ Tu es l'assistant pédagogique STRICT et OFFICIEL des plateformes Rafi9ni et 9is
         this.contextService.childProfile$.subscribe(profiles => {
             console.log('AiChatService: Changement de profils détecté:', profiles?.length || 0);
 
-            // On déclenche la recherche pour le dernier profil mis à jour (le dernier de la liste)
             if (profiles && profiles.length > 0) {
                 const latestProfile = this.contextService.getProfile();
                 if (latestProfile) {
@@ -97,7 +96,6 @@ Tu es l'assistant pédagogique STRICT et OFFICIEL des plateformes Rafi9ni et 9is
     }
 
     setHomeworkContext(homeworkData: any): void {
-        // Legacy support if needed, but now we use subscription
         this.homeworkContext = homeworkData;
         this.updateSystemPromptWithProfile();
     }
@@ -135,9 +133,7 @@ Tu es l'assistant pédagogique STRICT et OFFICIEL des plateformes Rafi9ni et 9is
 
     private updateSystemPromptWithProfile(): void {
         const fullPrompt = this.getSystemPromptWithProfile();
-        // Prompt logging disabled for performance and readability
 
-        // Ensure the system prompt is always at the beginning of the history
         if (this.conversationHistory.length > 0 && this.conversationHistory[0].role === 'system') {
             this.conversationHistory[0].content = fullPrompt;
         } else {
@@ -145,10 +141,9 @@ Tu es l'assistant pédagogique STRICT et OFFICIEL des plateformes Rafi9ni et 9is
         }
     }
 
-    sendMessageStream(userMessage: string): Observable<string> {
+    sendMessageStream(userMessage: string, conversationId: number | null = null): Observable<string> {
         this.updateSystemPromptWithProfile();
 
-        console.log('AiChatService: Ajout du message utilisateur à l\'historique...');
         this.conversationHistory.push({
             role: 'user',
             content: userMessage
@@ -156,18 +151,17 @@ Tu es l'assistant pédagogique STRICT et OFFICIEL des plateformes Rafi9ni et 9is
 
         return new Observable(observer => {
             const body = {
-                model: 'llama3.2:latest',
+                model: 'llama3.2', // Modified to match backend expectation if needed
                 messages: this.conversationHistory,
+                conversation_id: conversationId,
                 stream: true,
                 options: {
                     temperature: 0.7,
-                    num_ctx: 2048,
-                    num_predict: 512
+                    num_ctx: 4096
                 }
             };
 
-            console.log('AiChatService: Envoi requête POST vers', this.apiUrl);
-            console.log('AiChatService: Corps de la requête:', JSON.stringify(body, null, 2));
+            console.log('AiChatService: Envoi requête vers RAG backend:', this.apiUrl);
 
             fetch(this.apiUrl, {
                 method: 'POST',
@@ -175,17 +169,13 @@ Tu es l'assistant pédagogique STRICT et OFFICIEL des plateformes Rafi9ni et 9is
                 body: JSON.stringify(body)
             })
                 .then(async response => {
-                    console.log('AiChatService: Réponse HTTP reçue, statut:', response.status);
-
                     if (!response.ok) {
                         const errorText = await response.text();
-                        console.error('AiChatService: Erreur Ollama reçue:', errorText);
-                        throw new Error(`Ollama error (${response.status}): ${errorText}`);
+                        throw new Error(`RAG Error (${response.status}): ${errorText}`);
                     }
 
                     if (!response.body) {
-                        console.error('AiChatService: Corps de réponse vide !');
-                        throw new Error('ReadableStream not supported or empty body');
+                        throw new Error('No response body');
                     }
 
                     const reader = response.body.getReader();
@@ -196,7 +186,6 @@ Tu es l'assistant pédagogique STRICT et OFFICIEL des plateformes Rafi9ni et 9is
                     const readChunk = (): void => {
                         reader.read().then(({ done, value }) => {
                             if (done) {
-                                console.log('AiChatService: Flux terminé.');
                                 if (buffer.trim()) {
                                     this.processJsonLines(buffer, (content) => {
                                         fullResponse += content;
@@ -209,7 +198,6 @@ Tu es l'assistant pédagogique STRICT et OFFICIEL des plateformes Rafi9ni et 9is
                             }
 
                             const chunk = decoder.decode(value, { stream: true });
-                            console.log('AiChatService: Chunk reçu (longueur:', chunk.length, ')');
                             buffer += chunk;
 
                             const lastNewlineIndex = buffer.lastIndexOf('\n');
@@ -224,7 +212,6 @@ Tu es l'assistant pédagogique STRICT et OFFICIEL des plateformes Rafi9ni et 9is
                             }
                             readChunk();
                         }).catch(error => {
-                            console.error('AiChatService: Erreur lors de la lecture du flux:', error);
                             this.ngZone.run(() => observer.error(error));
                         });
                     };
@@ -232,7 +219,6 @@ Tu es l'assistant pédagogique STRICT et OFFICIEL des plateformes Rafi9ni et 9is
                     readChunk();
                 })
                 .catch(error => {
-                    console.error('AiChatService: Erreur Fetch fatale:', error);
                     this.ngZone.run(() => observer.error(error));
                 });
         });
@@ -243,14 +229,21 @@ Tu es l'assistant pédagogique STRICT et OFFICIEL des plateformes Rafi9ni et 9is
         for (const line of lines) {
             try {
                 const json = JSON.parse(line);
+                let content = '';
+
                 if (json.message?.content) {
-                    onContent(json.message.content);
+                    content += json.message.content;
                 }
-                if (json.done) {
-                    console.log('AiChatService: Signal "done" reçu dans le JSON.');
+
+                if (json.message?.thought) {
+                    content += `[Pensée : ${json.message.thought}] `;
+                }
+
+                if (content) {
+                    onContent(content);
                 }
             } catch (e) {
-                console.warn('AiChatService: Erreur de parsing JSON sur la ligne:', line);
+                // Ignore parsing errors for partial lines
             }
         }
     }

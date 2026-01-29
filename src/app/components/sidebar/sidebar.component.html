@@ -13,10 +13,14 @@
     </div>
 </div>
 
-
-
 <div class="nav-container">
     <ul class="nav-links">
+
+        <li class="nav-item" *ngIf="!isAdmin()">
+            <a routerLink="/accueil" routerLinkActive="active" class="btn-soft-pink">
+                <i class="fa fa-home"></i> Accueil
+            </a>
+        </li>
 
         <li class="nav-item" *ngIf="!isAdmin()">
             <a routerLink="/questionnaire" routerLinkActive="active" class="btn-soft-purple">
@@ -43,51 +47,37 @@
         </li>
 
         <li class="nav-item" *ngIf="!isAdmin()">
-            <a routerLink="/accueil" routerLinkActive="active">
-                <i class="fa fa-home"></i> Accueil
-            </a>
-        </li>
-
-        <li class="nav-item" *ngIf="!isAdmin()">
-            <a routerLink="/mes-enfants" routerLinkActive="active">
+            <a routerLink="/mes-enfants" routerLinkActive="active" class="btn-soft-pink">
                 <i class="fa fa-child"></i> Mes Enfants
             </a>
         </li>
 
-        <!--li class="nav-item" *ngIf="!isAdmin()">
-            <a routerLink="/calendrier" routerLinkActive="active">
-                <i class="fa fa-calendar"></i> Calendrier
-            </a>
-        </li-->
-
         <li class="nav-item">
-            <a routerLink="/conseils" routerLinkActive="active">
+            <a routerLink="/conseils" routerLinkActive="active" class="btn-soft-green">
                 <i class="fa fa-lightbulb"></i> Conseils & Astuces
             </a>
         </li>
 
-
-        <ng-container *ngIf="isAdmin()">
-            <li class="nav-item">
-                <a routerLink="/admin" routerLinkActive="active">
-                    <i class="fa fa-tachometer-alt"></i>
-                    <span class="link-text">Tableau de Bord</span>
-                </a>
-            </li>
-
-        </ng-container>
-
         <li class="nav-item" *ngIf="!isAdmin()">
-            <a routerLink="/chat" routerLinkActive="active">
+            <a routerLink="/chat" routerLinkActive="active" class="btn-soft-purple">
                 <i class="fa fa-robot"></i>
                 <span class="link-text">Assistant AI</span>
             </a>
         </li>
+
+        <ng-container *ngIf="isAdmin()">
+            <li class="nav-item">
+                <a routerLink="/admin" routerLinkActive="active" class="btn-soft-blue">
+                    <i class="fa fa-tachometer-alt"></i>
+                    <span class="link-text">Tableau de Bord</span>
+                </a>
+            </li>
+        </ng-container>
     </ul>
 </div>
 
 <div class="logout-section" *ngIf="currentUser$ | async">
-    <a href="javascript:void(0)" (click)="logout()">
+    <a href="javascript:void(0)" (click)="logout()" class="btn-logout-sidebar">
         <i class="fa fa-sign-out-alt"></i>
         <span>Déconnexion</span>
     </a>

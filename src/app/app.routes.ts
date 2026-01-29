@@ -1,11 +1,3 @@
-/**
- * PURPOSE: Defines the navigation map of the application.
- * CONTENT: Routes for Login, Signup, Dashboard (Accueil), Chat (AI), Child Management, and Calendar.
- */
-/**
- * PURPOSE: Manages family events and calendar data.
- * CONTENT: Functions to fetch, create, and manage events scheduled by parents.
- */
 import { Routes } from '@angular/router';
 import { AccueilComponent } from './components/accueil/accueil.component';
 import { MesEnfantsComponent } from './components/mes-enfants/mes-enfants.component';
